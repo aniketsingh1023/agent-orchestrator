@@ -1,4 +1,4 @@
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, SignOutButton } from "@clerk/nextjs";
 import Link from "next/link";
 
 export default function DashboardLayout({
@@ -56,11 +56,19 @@ export default function DashboardLayout({
             Canvas Builder
           </Link>
         </nav>
-        <div className="p-4 border-t border-neutral-200">
+        <div className="p-4 border-t border-neutral-200 space-y-3">
           <div className="flex items-center gap-3">
             <UserButton />
             <span className="text-sm text-neutral-600">Account</span>
           </div>
+          <SignOutButton redirectUrl="/">
+            <button className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-50 transition-colors">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Sign Out
+            </button>
+          </SignOutButton>
         </div>
       </aside>
 

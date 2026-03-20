@@ -70,6 +70,16 @@ model Worker {
   @@map("workers")
 }
 
+// ── Waitlist ──────────────────────────
+
+model Waitlist {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+
+  @@map("waitlist")
+}
+
 model Task {
   id           String     @id @default(uuid())
   name         String
