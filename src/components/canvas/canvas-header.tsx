@@ -1,11 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useWorkflowStore } from "@/stores/workflow-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { RuntimeEvent } from "@/lib/agents/claude-runtime";
+import type { ExecutionState } from "@/types/workflow";
+
+const STATUS_MAP: Record<string, ExecutionState> = {
+  PENDING: "queued",
+  RUNNING: "running",
+  COMPLETED: "success",
+  FAILED: "error",
+};
 
 export function CanvasHeader() {
   const {
@@ -16,50 +23,46 @@ export function CanvasHeader() {
   } = useWorkflowStore();
 
   const [saving, setSaving] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const router = useRouter();
 
-  // ── WebSocket: live execution updates ──
-  const connectWs = useCallback((execId: string) => {
-    const wsUrl = `ws://localhost:${process.env.NEXT_PUBLIC_WS_PORT || "3002"}?executionId=${execId}`;
-    const ws = new WebSocket(wsUrl);
+  // ── Poll execution status ──
+  useEffect(() => {
+    if (!executionId || !workflowId || !isExecuting) return;
 
-    ws.onmessage = (msg) => {
-      const event: RuntimeEvent = JSON.parse(msg.data);
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/canvas/workflows/${workflowId}/executions/${executionId}`);
+        if (!res.ok) return;
+        const data = await res.json();
 
-      if (event.nodeId === "__workflow__") {
-        setIsExecuting(false);
-        return;
-      }
-
-      switch (event.type) {
-        case "task_started":
-          setNodeExecutionState(event.nodeId, "running");
-          break;
-        case "task_completed":
-          setNodeExecutionState(event.nodeId, "success", {
-            output: String(event.data.output || ""),
-            durationMs: Number(event.data.durationMs || 0),
+        // Update each node's execution state
+        for (const [nodeId, state] of Object.entries(data.nodeStates)) {
+          const s = state as { status: string; output?: string; error?: string; durationMs?: number };
+          setNodeExecutionState(nodeId, STATUS_MAP[s.status] || "idle", {
+            output: s.output,
+            error: s.error,
+            durationMs: s.durationMs,
           });
-          break;
-        case "task_failed":
-          setNodeExecutionState(event.nodeId, "error", {
-            error: String(event.data.error || "Failed"),
-          });
-          break;
+        }
+
+        // Stop polling when done
+        if (data.status === "COMPLETED" || data.status === "FAILED") {
+          setIsExecuting(false);
+          if (pollRef.current) clearInterval(pollRef.current);
+        }
+      } catch {
+        // Ignore poll errors
       }
     };
 
-    ws.onclose = () => setIsExecuting(false);
+    poll(); // immediate first poll
+    pollRef.current = setInterval(poll, 2000);
 
-    return ws;
-  }, [setIsExecuting, setNodeExecutionState]);
-
-  // Reconnect on execution
-  useEffect(() => {
-    if (!executionId || !isExecuting) return;
-    const ws = connectWs(executionId);
-    return () => ws.close();
-  }, [executionId, isExecuting, connectWs]);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [executionId, workflowId, isExecuting, setNodeExecutionState, setIsExecuting]);
 
   async function handleSave() {
     setSaving(true);
@@ -92,8 +95,6 @@ export function CanvasHeader() {
 
     resetExecutionStates();
     setIsExecuting(true);
-
-    // Mark all nodes as queued
     nodes.forEach((n) => setNodeExecutionState(n.id, "queued"));
 
     const res = await fetch(`/api/canvas/workflows/${workflowId}/execute`, { method: "POST" });
@@ -105,13 +106,15 @@ export function CanvasHeader() {
 
     const data = await res.json();
     setExecutionId(data.executionId);
+
+    if (!data.workerOnline) {
+      alert("No CLI worker connected. Run 'ctrlai start' on your machine to execute tasks.");
+    }
   }
 
   return (
     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-white/95 backdrop-blur-sm rounded-2xl border border-neutral-200 shadow-lg px-5 py-2.5">
-      <button onClick={() => router.push("/dashboard")} className="text-neutral-400 hover:text-neutral-600 text-sm font-medium">
-        ←
-      </button>
+      <button onClick={() => router.push("/dashboard")} className="text-neutral-400 hover:text-neutral-600 text-sm font-medium">←</button>
 
       <div className="w-6 h-6 rounded-lg bg-orange-500 flex items-center justify-center shrink-0">
         <span className="text-white font-bold text-[10px]">C</span>
@@ -138,13 +141,8 @@ export function CanvasHeader() {
         className="bg-orange-500 hover:bg-orange-600 text-white text-xs h-8 gap-1.5"
       >
         {isExecuting ? (
-          <>
-            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-            Running...
-          </>
-        ) : (
-          "▶ Execute"
-        )}
+          <><span className="w-2 h-2 rounded-full bg-white animate-pulse" />Running...</>
+        ) : "▶ Execute"}
       </Button>
     </div>
   );
