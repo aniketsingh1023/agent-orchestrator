@@ -50,7 +50,7 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-xl border-b border-neutral-200/60">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <Image src="/logo.svg" alt="CtrlAI" width={32} height={32} />
+            <Image src="/logo.jpeg" alt="CtrlAI" width={32} height={32} />
             <span className="font-bold text-lg tracking-tight">CtrlAI</span>
           </div>
           <a
@@ -75,7 +75,7 @@ export default function LandingPage() {
 
           {/* Logo mark */}
           <motion.div {...fade(0.05)} className="flex justify-center mb-8">
-            <Image src="/logo.svg" alt="CtrlAI" width={56} height={56} className="drop-shadow-lg" />
+            <Image src="/logo.jpeg" alt="CtrlAI" width={56} height={56} className="drop-shadow-lg" />
           </motion.div>
 
           {/* Headline */}
@@ -215,7 +215,7 @@ export default function LandingPage() {
       <footer className="border-t border-neutral-200 py-8 px-6 bg-white">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Image src="/logo.svg" alt="CtrlAI" width={20} height={20} />
+            <Image src="/logo.jpeg" alt="CtrlAI" width={20} height={20} />
             <span className="text-xs text-neutral-500 font-medium">CtrlAI</span>
           </div>
           <span className="text-xs text-neutral-400">Made with love by Aniket Singh</span>

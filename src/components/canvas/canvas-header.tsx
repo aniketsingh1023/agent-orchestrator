@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useWorkflowStore } from "@/stores/workflow-store";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { ExecutionState } from "@/types/workflow";
@@ -116,9 +117,7 @@ export function CanvasHeader() {
     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-white/95 backdrop-blur-sm rounded-2xl border border-neutral-200 shadow-lg px-5 py-2.5">
       <button onClick={() => router.push("/dashboard")} className="text-neutral-400 hover:text-neutral-600 text-sm font-medium">←</button>
 
-      <div className="w-6 h-6 rounded-lg bg-orange-500 flex items-center justify-center shrink-0">
-        <span className="text-white font-bold text-[10px]">C</span>
-      </div>
+      <Image src="/logo.jpeg" alt="CtrlAI" width={24} height={24} className="rounded-md shrink-0" />
 
       <Input
         value={workflowName}

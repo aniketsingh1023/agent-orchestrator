@@ -1,4 +1,5 @@
 import { UserButton, SignOutButton } from "@clerk/nextjs";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function DashboardLayout({
@@ -12,9 +13,7 @@ export default function DashboardLayout({
       <aside className="w-64 border-r border-neutral-200 bg-neutral-50 flex flex-col">
         <div className="p-6 border-b border-neutral-200">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">C</span>
-            </div>
+            <Image src="/logo.jpeg" alt="CtrlAI" width={32} height={32} className="rounded-lg" />
             <span className="font-semibold text-lg tracking-tight">CtrlAI</span>
           </Link>
         </div>
