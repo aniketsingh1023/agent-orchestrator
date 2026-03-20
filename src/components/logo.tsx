@@ -14,32 +14,32 @@ export function Logo({ size = 32 }: { size?: number }) {
   );
 }
 
-export function LogoFull({ height = 40 }: { height?: number }) {
-  const width = Math.round(height * 2.25);
+export function LogoFull({ height = 32 }: { height?: number }) {
   return (
-    <div className="flex items-center gap-0 shrink-0">
+    <div className="flex items-center gap-2 shrink-0">
       <Image
-        src="/logo-light.png"
+        src="/logo-icon.png"
         alt="CtrlAI"
-        width={width}
+        width={height}
         height={height}
-        className="object-contain object-left"
-        style={{ height, width: "auto", maxHeight: height }}
+        className="rounded-lg"
       />
+      <span className="font-bold text-lg tracking-tight text-neutral-900">CtrlAI</span>
     </div>
   );
 }
 
-export function LogoDark({ height = 40 }: { height?: number }) {
-  const width = Math.round(height * 2.25);
+export function LogoDark({ height = 32 }: { height?: number }) {
   return (
-    <Image
-      src="/logo-dark.png"
-      alt="CtrlAI"
-      width={width}
-      height={height}
-      className="shrink-0 object-contain"
-      style={{ height, width: "auto", maxHeight: height }}
-    />
+    <div className="flex items-center gap-2 shrink-0">
+      <Image
+        src="/logo-icon.png"
+        alt="CtrlAI"
+        width={height}
+        height={height}
+        className="rounded-lg"
+      />
+      <span className="font-bold text-lg tracking-tight text-white">CtrlAI</span>
+    </div>
   );
 }
