@@ -23,7 +23,7 @@ export function ConfigPanel() {
   const cfg = node.data.config as Record<string, unknown>;
 
   return (
-    <div className="absolute top-0 right-0 z-10 w-80 h-full bg-white/95 backdrop-blur-sm border-l border-neutral-200 shadow-xl overflow-y-auto">
+    <div className="fixed top-0 right-0 z-50 w-80 h-screen bg-white/95 backdrop-blur-sm border-l border-neutral-200 shadow-xl overflow-y-auto animate-in slide-in-from-right duration-200">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-neutral-100">
         <div className="flex items-center gap-2.5">
