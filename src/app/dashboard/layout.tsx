@@ -46,6 +46,15 @@ export default function DashboardLayout({
             </svg>
             Workflows
           </Link>
+          <Link
+            href="/dashboard/canvas"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-orange-600 bg-orange-50 hover:bg-orange-100 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM9 14l2-2m0 0l2 2m-2-2v6" />
+            </svg>
+            Canvas Builder
+          </Link>
         </nav>
         <div className="p-4 border-t border-neutral-200">
           <div className="flex items-center gap-3">
