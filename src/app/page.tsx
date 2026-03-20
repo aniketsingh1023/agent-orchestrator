@@ -41,17 +41,24 @@ export default function LandingPage() {
       {/* Background */}
       <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,rgba(249,115,22,0.05),transparent_60%)] pointer-events-none" />
       <div className="fixed inset-0 opacity-20 pointer-events-none" style={{
-        backgroundImage: "radial-gradient(circle, #ccc 0.7px, transparent 0.7px)",
-        backgroundSize: "28px 28px",
+        backgroundImage: "radial-gradient(circle, #999 0.8px, transparent 0.8px)",
+        backgroundSize: "22px 22px",
       }} />
 
       {/* ── NAVBAR ── */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-neutral-100">
-        <div className="max-w-7xl mx-auto px-8 h-16 flex items-center justify-between">
-          <LogoFull height={32} />
-          <a href="#waitlist" className="px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold rounded-lg transition-all hover:shadow-lg">
-            Join Waitlist
-          </a>
+      <nav className="fixed top-0 w-full z-50">
+        <div className="max-w-6xl mx-auto px-6 mt-4">
+          <div className="flex items-center justify-between h-14 px-5 bg-white/70 backdrop-blur-xl rounded-2xl border border-neutral-200/60 shadow-sm">
+            <LogoFull height={28} />
+            <div className="hidden md:flex items-center gap-6">
+              <a href="#problem" className="text-[13px] text-neutral-500 hover:text-neutral-900 transition-colors">Problem</a>
+              <a href="#builder" className="text-[13px] text-neutral-500 hover:text-neutral-900 transition-colors">Builder</a>
+              <a href="https://github.com/aniketsingh1023/agent-orchestrator" target="_blank" rel="noopener noreferrer" className="text-[13px] text-neutral-500 hover:text-neutral-900 transition-colors">GitHub</a>
+            </div>
+            <a href="#waitlist" className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold rounded-lg transition-all hover:shadow-lg">
+              Join Waitlist
+            </a>
+          </div>
         </div>
       </nav>
 
@@ -107,7 +114,7 @@ export default function LandingPage() {
       </section>
 
       {/* ═══════════ SECTION 2: OLD vs NEW ═══════════ */}
-      <section className="bg-neutral-950 text-white py-28 px-8 relative overflow-hidden">
+      <section id="problem" className="bg-neutral-950 text-white py-28 px-8 relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.15] pointer-events-none" style={{
           backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.4) 1px, transparent 1px)",
           backgroundSize: "24px 24px",
@@ -192,7 +199,7 @@ export default function LandingPage() {
       </section>
 
       {/* ═══════════ SECTION 3: BUILDER — GitHub heatmap ═══════════ */}
-      <section className="py-28 px-8 bg-[#f8f8f8] relative">
+      <section id="builder" className="py-28 px-8 bg-[#f8f8f8] relative">
         <div className="max-w-5xl mx-auto">
           <motion.div {...fadeView()} className="text-center mb-16">
             <img
