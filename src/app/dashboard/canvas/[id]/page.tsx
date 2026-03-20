@@ -41,16 +41,16 @@ export default function CanvasEditPage() {
       if (!res.ok) return;
       const data: ServerWorkflow = await res.json();
 
-      const nodes: Node<NodeData>[] = data.canvasNodes.map((n) => ({
+      const nodes = data.canvasNodes.map((n) => ({
         id: n.id,
-        type: "custom",
+        type: "custom" as const,
         position: { x: n.positionX, y: n.positionY },
         data: {
           label: n.label,
           type: n.type as NodeType,
-          config: n.config,
+          config: n.config as NodeData["config"],
           executionState: "idle" as const,
-        },
+        } satisfies NodeData,
       }));
 
       const edges: Edge[] = data.canvasEdges.map((e) => ({

@@ -1,6 +1,19 @@
-export type NodeType = "start" | "claude-task" | "api" | "condition" | "delay" | "output";
+/**
+ * CtrlAI — Node Type System
+ *
+ * Every node type serves the Claude Code orchestration story.
+ * No generic automation nodes. This is a Claude execution platform.
+ */
 
-export type ExecutionState = "idle" | "running" | "success" | "error";
+export type NodeType =
+  | "start"        // Workflow trigger
+  | "claude-task"  // THE core node — runs Claude Code
+  | "claude-review"// Claude reviews output of previous node
+  | "gate"         // Pass/fail check on output
+  | "merge"        // Combine parallel branch outputs
+  | "output";      // Final result collection
+
+export type ExecutionState = "idle" | "queued" | "running" | "success" | "error" | "skipped";
 
 export interface NodeData {
   label: string;
@@ -9,42 +22,64 @@ export interface NodeData {
   executionState: ExecutionState;
   output?: string;
   error?: string;
+  durationMs?: number;
+  logCount?: number;
   [key: string]: unknown;
 }
 
-// Node-specific configs
+// ── Node Configs ──────────────────────────
+
+export type NodeConfig =
+  | StartNodeConfig
+  | ClaudeTaskConfig
+  | ClaudeReviewConfig
+  | GateConfig
+  | MergeConfig
+  | OutputConfig;
+
 export interface StartNodeConfig {
+  nodeType: "start";
   triggerType: "manual" | "schedule" | "webhook";
   cronExpression?: string;
 }
 
-export interface ClaudeTaskNodeConfig {
+export interface ClaudeTaskConfig {
+  nodeType: "claude-task";
   prompt: string;
-  model: string;
-  maxTokens: number;
-  useContext: boolean; // use output from previous node as context
+  useUpstreamContext: boolean; // Inject output from upstream nodes
+  workingDirectory?: string;
+  maxRetries: number;
+  retryDelayMs: number;
 }
 
-export interface ApiNodeConfig {
-  url: string;
-  method: "GET" | "POST" | "PUT" | "DELETE";
-  headers: Record<string, string>;
-  body?: string;
+export interface ClaudeReviewConfig {
+  nodeType: "claude-review";
+  reviewPrompt: string; // "Review this code for bugs..."
+  passCondition: string; // "approved" | "no issues found" etc
+  maxRetries: number;
+  retryDelayMs: number;
 }
 
-export interface ConditionNodeConfig {
-  expression: string; // JS expression evaluated against input
-  trueLabel: string;
-  falseLabel: string;
+export interface GateConfig {
+  nodeType: "gate";
+  condition: "contains" | "not_contains" | "equals" | "not_empty" | "custom";
+  value: string; // What to check for
+  customExpression?: string; // For "custom" condition
 }
 
-export interface DelayNodeConfig {
-  delayMs: number;
+export interface MergeConfig {
+  nodeType: "merge";
+  strategy: "concat" | "json_merge" | "latest";
+  separator?: string;
 }
 
-export interface OutputNodeConfig {
-  format: "raw" | "json" | "markdown";
+export interface OutputConfig {
+  nodeType: "output";
+  format: "raw" | "json" | "markdown" | "summary";
+  summaryPrompt?: string; // If format=summary, Claude summarizes the final output
 }
+
+// ── Node Definitions (for toolbar + rendering) ──────────────────────────
 
 export const NODE_DEFINITIONS: Record<
   NodeType,
@@ -53,62 +88,85 @@ export const NODE_DEFINITIONS: Record<
     description: string;
     color: string;
     icon: string;
-    defaultConfig: Record<string, unknown>;
+    defaultConfig: NodeConfig;
     maxInputs: number;
     maxOutputs: number;
   }
 > = {
   start: {
     label: "Start",
-    description: "Trigger point for the workflow",
+    description: "Trigger the workflow",
     color: "#22c55e",
     icon: "▶",
-    defaultConfig: { triggerType: "manual" },
+    defaultConfig: { nodeType: "start", triggerType: "manual" },
     maxInputs: 0,
     maxOutputs: 1,
   },
   "claude-task": {
     label: "Claude Task",
-    description: "Run a Claude Code agent",
+    description: "Execute a Claude Code agent task",
     color: "#f97316",
     icon: "⚡",
-    defaultConfig: { prompt: "", model: "claude-code", maxTokens: 4096, useContext: true },
+    defaultConfig: {
+      nodeType: "claude-task",
+      prompt: "",
+      useUpstreamContext: true,
+      maxRetries: 2,
+      retryDelayMs: 5000,
+    },
     maxInputs: 5,
     maxOutputs: 1,
   },
-  api: {
-    label: "API Call",
-    description: "Make an HTTP request",
-    color: "#3b82f6",
-    icon: "🌐",
-    defaultConfig: { url: "", method: "GET", headers: {}, body: "" },
+  "claude-review": {
+    label: "Claude Review",
+    description: "Claude reviews the output of the previous step",
+    color: "#8b5cf6",
+    icon: "🔍",
+    defaultConfig: {
+      nodeType: "claude-review",
+      reviewPrompt: "Review the following output for quality and correctness.",
+      passCondition: "approved",
+      maxRetries: 1,
+      retryDelayMs: 3000,
+    },
     maxInputs: 1,
-    maxOutputs: 1,
+    maxOutputs: 2, // pass / fail
   },
-  condition: {
-    label: "Condition",
-    description: "Branch based on a condition",
-    color: "#a855f7",
-    icon: "◆",
-    defaultConfig: { expression: "", trueLabel: "True", falseLabel: "False" },
+  gate: {
+    label: "Gate",
+    description: "Check if output meets criteria",
+    color: "#eab308",
+    icon: "⚑",
+    defaultConfig: {
+      nodeType: "gate",
+      condition: "not_empty",
+      value: "",
+    },
     maxInputs: 1,
-    maxOutputs: 2,
+    maxOutputs: 2, // pass / fail
   },
-  delay: {
-    label: "Delay",
-    description: "Wait before continuing",
+  merge: {
+    label: "Merge",
+    description: "Combine outputs from parallel branches",
     color: "#64748b",
-    icon: "⏱",
-    defaultConfig: { delayMs: 5000 },
-    maxInputs: 1,
+    icon: "⊕",
+    defaultConfig: {
+      nodeType: "merge",
+      strategy: "concat",
+      separator: "\n\n---\n\n",
+    },
+    maxInputs: 10,
     maxOutputs: 1,
   },
   output: {
     label: "Output",
-    description: "Final workflow output",
+    description: "Collect the final workflow result",
     color: "#ef4444",
     icon: "⬤",
-    defaultConfig: { format: "raw" },
+    defaultConfig: {
+      nodeType: "output",
+      format: "raw",
+    },
     maxInputs: 5,
     maxOutputs: 0,
   },

@@ -1,9 +1,11 @@
 import "dotenv/config";
-import { Worker, Job } from "bullmq";
+import { Worker, Job, Queue } from "bullmq";
 import { PrismaClient } from "../generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { ClaudeCodeProvider } from "../lib/agents/claude-code";
-import type { AgentProvider } from "../lib/agents/provider";
+import { claudeRuntime, type RuntimeEvent, type TaskContext } from "../lib/agents/claude-runtime";
+import { WebSocketServer, WebSocket } from "ws";
+
+// ── Database ────────────────────────────
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const db = new PrismaClient({ adapter });
@@ -14,11 +16,159 @@ const redisConnection = {
   maxRetriesPerRequest: null,
 };
 
-const agents: Record<string, AgentProvider> = {
-  "claude-code": new ClaudeCodeProvider(),
-};
+const taskQueue = new Queue("task-execution", { connection: redisConnection });
 
-// ── Task Worker (Phase 1 — standalone tasks) ────────
+// ── WebSocket Server for real-time updates ────────────────────────────
+
+const wss = new WebSocketServer({ port: parseInt(process.env.WS_PORT || "3002") });
+const clients = new Map<string, Set<WebSocket>>(); // executionId → connected clients
+
+wss.on("connection", (ws, req) => {
+  const url = new URL(req.url || "", `http://localhost`);
+  const executionId = url.searchParams.get("executionId");
+  if (!executionId) {
+    ws.close();
+    return;
+  }
+
+  if (!clients.has(executionId)) clients.set(executionId, new Set());
+  clients.get(executionId)!.add(ws);
+
+  ws.on("close", () => {
+    clients.get(executionId)?.delete(ws);
+    if (clients.get(executionId)?.size === 0) clients.delete(executionId);
+  });
+});
+
+function broadcast(executionId: string, event: RuntimeEvent) {
+  const sockets = clients.get(executionId);
+  if (!sockets) return;
+  const msg = JSON.stringify(event);
+  for (const ws of sockets) {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(msg);
+    }
+  }
+}
+
+// ── Execution Logic ────────────────────────────
+
+/**
+ * Get outputs from all completed upstream nodes for context chaining.
+ */
+async function getUpstreamOutputs(
+  executionId: string,
+  stepId: string
+): Promise<Map<string, string>> {
+  const outputs = new Map<string, string>();
+
+  // Find all dependencies of this step
+  const deps = await db.workflowStepDependency.findMany({
+    where: { dependentStepId: stepId },
+  });
+
+  for (const dep of deps) {
+    const upstreamExec = await db.stepExecution.findFirst({
+      where: {
+        executionId,
+        stepId: dep.dependencyStepId,
+        status: "COMPLETED",
+      },
+    });
+
+    if (upstreamExec?.result) {
+      outputs.set(dep.dependencyStepId, upstreamExec.result);
+    }
+  }
+
+  return outputs;
+}
+
+/**
+ * After a node completes, find and enqueue the next ready nodes.
+ */
+async function advanceDAG(executionId: string) {
+  const allStepExecs = await db.stepExecution.findMany({
+    where: { executionId },
+    include: {
+      step: { include: { dependsOn: true } },
+    },
+  });
+
+  // Check if workflow is done
+  const allDone = allStepExecs.every(
+    (se) => se.status === "COMPLETED" || se.status === "FAILED"
+  );
+
+  if (allDone) {
+    const anyFailed = allStepExecs.some((se) => se.status === "FAILED");
+    await db.workflowExecution.update({
+      where: { id: executionId },
+      data: {
+        status: anyFailed ? "FAILED" : "COMPLETED",
+        completedAt: new Date(),
+      },
+    });
+
+    broadcast(executionId, {
+      type: anyFailed ? "task_failed" : "task_completed",
+      nodeId: "__workflow__",
+      executionId,
+      timestamp: Date.now(),
+      data: { status: anyFailed ? "FAILED" : "COMPLETED" },
+    });
+
+    console.log(`[worker] Execution ${executionId} ${anyFailed ? "FAILED" : "COMPLETED"}`);
+    return;
+  }
+
+  // Find pending steps whose deps are all completed
+  for (const stepExec of allStepExecs) {
+    if (stepExec.status !== "PENDING") continue;
+
+    const depIds = stepExec.step.dependsOn.map((d) => d.dependencyStepId);
+
+    // Steps with no deps were already enqueued at start
+    if (depIds.length === 0) continue;
+
+    const depExecs = allStepExecs.filter((se) => depIds.includes(se.stepId));
+    const allDepsCompleted = depExecs.every((de) => de.status === "COMPLETED");
+    const anyDepFailed = depExecs.some((de) => de.status === "FAILED");
+
+    if (allDepsCompleted) {
+      await taskQueue.add("execute-step", {
+        stepExecutionId: stepExec.id,
+        executionId,
+        stepId: stepExec.stepId,
+      });
+    } else if (anyDepFailed) {
+      await db.stepExecution.update({
+        where: { id: stepExec.id },
+        data: {
+          status: "FAILED",
+          errorMessage: "Upstream node failed",
+          completedAt: new Date(),
+        },
+      });
+
+      broadcast(executionId, {
+        type: "task_failed",
+        nodeId: stepExec.stepId,
+        executionId,
+        timestamp: Date.now(),
+        data: { error: "Upstream node failed" },
+      });
+    }
+  }
+}
+
+// ── Job Handlers ────────────────────────────
+
+interface StepJobData {
+  stepExecutionId: string;
+  executionId: string;
+  stepId: string;
+}
 
 interface TaskJobData {
   taskId: string;
@@ -26,31 +176,254 @@ interface TaskJobData {
   agentType: string;
 }
 
-async function processTask(job: Job<TaskJobData>) {
-  const { taskId, prompt, agentType } = job.data;
+async function processStepJob(job: Job<StepJobData>) {
+  const { stepExecutionId, executionId, stepId } = job.data;
 
-  const agent = agents[agentType];
-  if (!agent) {
-    await db.task.update({
-      where: { id: taskId },
-      data: { status: "FAILED", errorMessage: `Unknown agent type: ${agentType}` },
+  const stepExec = await db.stepExecution.findUnique({
+    where: { id: stepExecutionId },
+    include: { step: true },
+  });
+
+  if (!stepExec) return;
+
+  const step = stepExec.step;
+  const nodeType = step.agentType; // "start", "claude-task", "claude-review", "gate", "merge", "output"
+
+  // ── Handle non-Claude node types ──
+
+  if (nodeType === "start") {
+    await db.stepExecution.update({
+      where: { id: stepExecutionId },
+      data: {
+        status: "COMPLETED",
+        result: "Workflow started",
+        startedAt: new Date(),
+        completedAt: new Date(),
+      },
     });
+
+    broadcast(executionId, {
+      type: "task_completed",
+      nodeId: stepId,
+      executionId,
+      timestamp: Date.now(),
+      data: { output: "Workflow started", durationMs: 0 },
+    });
+
+    await advanceDAG(executionId);
     return;
   }
+
+  if (nodeType === "gate") {
+    const upstreamOutputs = await getUpstreamOutputs(executionId, stepId);
+    const input = Array.from(upstreamOutputs.values()).join("\n");
+    let config: Record<string, unknown> = {};
+    try { config = JSON.parse(step.prompt); } catch { /* */ }
+
+    const condition = String(config.condition || "not_empty");
+    const value = String(config.value || "");
+    let pass = false;
+
+    switch (condition) {
+      case "contains": pass = input.includes(value); break;
+      case "not_contains": pass = !input.includes(value); break;
+      case "equals": pass = input.trim() === value.trim(); break;
+      case "not_empty": pass = input.trim().length > 0; break;
+      default: pass = input.trim().length > 0;
+    }
+
+    await db.stepExecution.update({
+      where: { id: stepExecutionId },
+      data: {
+        status: "COMPLETED",
+        result: pass ? "PASS" : "FAIL",
+        startedAt: new Date(),
+        completedAt: new Date(),
+      },
+    });
+
+    broadcast(executionId, {
+      type: "task_completed",
+      nodeId: stepId,
+      executionId,
+      timestamp: Date.now(),
+      data: { output: pass ? "PASS" : "FAIL" },
+    });
+
+    await advanceDAG(executionId);
+    return;
+  }
+
+  if (nodeType === "merge") {
+    const upstreamOutputs = await getUpstreamOutputs(executionId, stepId);
+    let config: Record<string, unknown> = {};
+    try { config = JSON.parse(step.prompt); } catch { /* */ }
+
+    const strategy = String(config.strategy || "concat");
+    const separator = String(config.separator || "\n\n---\n\n");
+    let merged: string;
+
+    switch (strategy) {
+      case "json_merge":
+        merged = JSON.stringify(Object.fromEntries(upstreamOutputs));
+        break;
+      case "latest":
+        merged = Array.from(upstreamOutputs.values()).pop() || "";
+        break;
+      default:
+        merged = Array.from(upstreamOutputs.values()).join(separator);
+    }
+
+    await db.stepExecution.update({
+      where: { id: stepExecutionId },
+      data: {
+        status: "COMPLETED",
+        result: merged,
+        startedAt: new Date(),
+        completedAt: new Date(),
+      },
+    });
+
+    broadcast(executionId, {
+      type: "task_completed",
+      nodeId: stepId,
+      executionId,
+      timestamp: Date.now(),
+      data: { output: merged.slice(0, 1000) },
+    });
+
+    await advanceDAG(executionId);
+    return;
+  }
+
+  if (nodeType === "output") {
+    const upstreamOutputs = await getUpstreamOutputs(executionId, stepId);
+    const finalOutput = Array.from(upstreamOutputs.values()).join("\n\n");
+
+    await db.stepExecution.update({
+      where: { id: stepExecutionId },
+      data: {
+        status: "COMPLETED",
+        result: finalOutput,
+        startedAt: new Date(),
+        completedAt: new Date(),
+      },
+    });
+
+    broadcast(executionId, {
+      type: "task_completed",
+      nodeId: stepId,
+      executionId,
+      timestamp: Date.now(),
+      data: { output: finalOutput.slice(0, 2000) },
+    });
+
+    await advanceDAG(executionId);
+    return;
+  }
+
+  // ── Claude Task / Claude Review — the core execution ──
+
+  await db.stepExecution.update({
+    where: { id: stepExecutionId },
+    data: { status: "RUNNING", startedAt: new Date() },
+  });
+
+  broadcast(executionId, {
+    type: "task_started",
+    nodeId: stepId,
+    executionId,
+    timestamp: Date.now(),
+    data: {},
+  });
+
+  const upstreamOutputs = await getUpstreamOutputs(executionId, stepId);
+
+  // Build prompt based on node type
+  let prompt: string;
+  if (nodeType === "claude-review") {
+    let config: Record<string, unknown> = {};
+    try { config = JSON.parse(step.prompt); } catch { /* */ }
+    const reviewPrompt = String(config.reviewPrompt || "Review the following output.");
+    prompt = reviewPrompt;
+  } else {
+    prompt = step.prompt;
+  }
+
+  const ctx: TaskContext = {
+    nodeId: stepId,
+    executionId,
+    prompt,
+    upstreamOutputs,
+    maxRetries: stepExec.maxRetries,
+    retryDelayMs: stepExec.retryDelayMs,
+  };
+
+  const onEvent = async (event: RuntimeEvent) => {
+    // Persist logs
+    if (event.type === "task_output") {
+      const stream = String(event.data.stream || "stdout").toUpperCase();
+      await db.stepLog.create({
+        data: {
+          stepExecutionId,
+          stream: stream as "STDOUT" | "STDERR" | "SYSTEM",
+          content: String(event.data.content),
+        },
+      });
+    }
+
+    // Broadcast to connected WebSocket clients
+    broadcast(executionId, event);
+  };
+
+  const result = await claudeRuntime.executeWithRetry(ctx, onEvent);
+
+  await db.stepExecution.update({
+    where: { id: stepExecutionId },
+    data: {
+      status: result.success ? "COMPLETED" : "FAILED",
+      result: result.output || null,
+      errorMessage: result.error || null,
+      completedAt: new Date(),
+      attempt: stepExec.attempt + 1,
+    },
+  });
+
+  await advanceDAG(executionId);
+}
+
+// Legacy standalone task handler (Phase 1 compatibility)
+async function processTaskJob(job: Job<TaskJobData>) {
+  const { taskId, prompt } = job.data;
 
   await db.task.update({
     where: { id: taskId },
     data: { status: "RUNNING", startedAt: new Date() },
   });
 
-  const onLog = async (stream: "stdout" | "stderr" | "system", content: string) => {
-    const streamMap = { stdout: "STDOUT", stderr: "STDERR", system: "SYSTEM" } as const;
-    await db.taskLog.create({
-      data: { taskId, stream: streamMap[stream], content },
-    });
+  const ctx: TaskContext = {
+    nodeId: taskId,
+    executionId: taskId,
+    prompt,
+    upstreamOutputs: new Map(),
+    maxRetries: 2,
+    retryDelayMs: 5000,
   };
 
-  const result = await agent.execute(prompt, onLog);
+  const onEvent = async (event: RuntimeEvent) => {
+    if (event.type === "task_output") {
+      const stream = String(event.data.stream || "stdout").toUpperCase();
+      await db.taskLog.create({
+        data: {
+          taskId,
+          stream: stream as "STDOUT" | "STDERR" | "SYSTEM",
+          content: String(event.data.content),
+        },
+      });
+    }
+  };
+
+  const result = await claudeRuntime.executeWithRetry(ctx, onEvent);
 
   await db.task.update({
     where: { id: taskId },
@@ -63,164 +436,15 @@ async function processTask(job: Job<TaskJobData>) {
   });
 }
 
-// ── Step Worker (Phase 2 — workflow steps with retry) ────────
-
-interface StepJobData {
-  stepExecutionId: string;
-  executionId: string;
-  prompt: string;
-  agentType: string;
-}
-
-async function processStep(job: Job<StepJobData>) {
-  const { stepExecutionId, executionId, prompt, agentType } = job.data;
-
-  const agent = agents[agentType];
-  if (!agent) {
-    await db.stepExecution.update({
-      where: { id: stepExecutionId },
-      data: { status: "FAILED", errorMessage: `Unknown agent type: ${agentType}`, completedAt: new Date() },
-    });
-    await checkAndAdvance(executionId);
-    return;
-  }
-
-  const stepExec = await db.stepExecution.findUnique({ where: { id: stepExecutionId } });
-  if (!stepExec) return;
-
-  // Mark running
-  await db.stepExecution.update({
-    where: { id: stepExecutionId },
-    data: {
-      status: "RUNNING",
-      startedAt: new Date(),
-      attempt: stepExec.attempt + 1,
-    },
-  });
-
-  const onLog = async (stream: "stdout" | "stderr" | "system", content: string) => {
-    const streamMap = { stdout: "STDOUT", stderr: "STDERR", system: "SYSTEM" } as const;
-    await db.stepLog.create({
-      data: { stepExecutionId, stream: streamMap[stream], content },
-    });
-  };
-
-  const result = await agent.execute(prompt, onLog);
-
-  if (result.success) {
-    await db.stepExecution.update({
-      where: { id: stepExecutionId },
-      data: { status: "COMPLETED", result: result.output || null, completedAt: new Date() },
-    });
-    await checkAndAdvance(executionId);
-  } else {
-    // Retry logic
-    const currentAttempt = stepExec.attempt + 1;
-    if (currentAttempt < stepExec.maxRetries) {
-      const delay = stepExec.retryDelayMs * Math.pow(2, currentAttempt - 1); // exponential backoff
-      await onLog("system", `Step failed (attempt ${currentAttempt}/${stepExec.maxRetries}). Retrying in ${delay}ms...`);
-
-      await db.stepExecution.update({
-        where: { id: stepExecutionId },
-        data: { status: "PENDING", errorMessage: result.error || null },
-      });
-
-      // Re-enqueue with delay
-      const { Queue } = await import("bullmq");
-      const retryQueue = new Queue("task-execution", { connection: redisConnection });
-      await retryQueue.add("execute-step", job.data, { delay });
-      await retryQueue.close();
-    } else {
-      await onLog("system", `Step failed after ${currentAttempt} attempts. Giving up.`);
-      await db.stepExecution.update({
-        where: { id: stepExecutionId },
-        data: { status: "FAILED", errorMessage: result.error || null, completedAt: new Date() },
-      });
-      await checkAndAdvance(executionId);
-    }
-  }
-}
-
-/**
- * After a step completes/fails, check if there are new steps ready to run
- * or if the entire execution is done.
- */
-async function checkAndAdvance(executionId: string) {
-  const stepExecutions = await db.stepExecution.findMany({
-    where: { executionId },
-    include: {
-      step: {
-        include: { dependsOn: true },
-      },
-    },
-  });
-
-  const allDone = stepExecutions.every(
-    (se) => se.status === "COMPLETED" || se.status === "FAILED"
-  );
-
-  if (allDone) {
-    const anyFailed = stepExecutions.some((se) => se.status === "FAILED");
-    await db.workflowExecution.update({
-      where: { id: executionId },
-      data: {
-        status: anyFailed ? "FAILED" : "COMPLETED",
-        completedAt: new Date(),
-      },
-    });
-    console.log(`[worker] Workflow execution ${executionId} ${anyFailed ? "FAILED" : "COMPLETED"}`);
-    return;
-  }
-
-  // Find pending steps whose dependencies are all completed
-  for (const stepExec of stepExecutions) {
-    if (stepExec.status !== "PENDING") continue;
-
-    const depIds = stepExec.step.dependsOn.map((d) => d.dependencyStepId);
-
-    if (depIds.length === 0) continue; // Already enqueued at start
-
-    const depExecs = stepExecutions.filter((se) => depIds.includes(se.stepId));
-    const allDepsCompleted = depExecs.every((de) => de.status === "COMPLETED");
-    const anyDepFailed = depExecs.some((de) => de.status === "FAILED");
-
-    if (allDepsCompleted) {
-      // Enqueue this step
-      await worker.client.then((queue) => {
-        // Can't easily access queue from worker, so use a workaround
-      });
-      // Direct enqueue via new Queue reference
-      const { Queue } = await import("bullmq");
-      const q = new Queue("task-execution", { connection: redisConnection });
-      await q.add("execute-step", {
-        stepExecutionId: stepExec.id,
-        executionId,
-        prompt: stepExec.step.prompt,
-        agentType: stepExec.step.agentType,
-      });
-      await q.close();
-    } else if (anyDepFailed) {
-      await db.stepExecution.update({
-        where: { id: stepExec.id },
-        data: {
-          status: "FAILED",
-          errorMessage: "Dependency step failed",
-          completedAt: new Date(),
-        },
-      });
-    }
-  }
-}
-
-// ── Worker Setup ────────
+// ── Worker Setup ────────────────────────────
 
 const worker = new Worker(
   "task-execution",
   async (job: Job) => {
     if (job.name === "execute-step") {
-      await processStep(job as Job<StepJobData>);
+      await processStepJob(job as Job<StepJobData>);
     } else {
-      await processTask(job as Job<TaskJobData>);
+      await processTaskJob(job as Job<TaskJobData>);
     }
   },
   {
@@ -230,11 +454,12 @@ const worker = new Worker(
 );
 
 worker.on("completed", (job) => {
-  console.log(`[worker] Job ${job.name} completed`);
+  console.log(`[worker] Job ${job.name} done`);
 });
 
 worker.on("failed", (job, err) => {
   console.error(`[worker] Job ${job?.name} failed:`, err.message);
 });
 
-console.log("[worker] Task execution worker started (Phase 1 + Phase 2)");
+console.log("[CtrlAI Worker] Started — Claude Runtime Controller active");
+console.log(`[CtrlAI Worker] WebSocket server on port ${process.env.WS_PORT || 3002}`);

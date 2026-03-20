@@ -16,35 +16,40 @@ export function NodeToolbar() {
   }
 
   function handleClick(type: NodeType) {
-    // Add node to center of viewport
-    const position = screenToFlowPosition({
-      x: window.innerWidth / 2,
-      y: window.innerHeight / 2,
-    });
+    const position = screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
     addNode(type, position);
   }
 
   return (
-    <div className="absolute top-4 left-4 z-10 bg-white rounded-xl border border-neutral-200 shadow-lg p-2 space-y-1">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 px-2 py-1">
-        Nodes
-      </p>
+    <div className="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur-sm rounded-2xl border border-neutral-200 shadow-lg p-2 space-y-0.5 w-52">
+      <div className="px-3 py-2 flex items-center gap-2">
+        <div className="w-5 h-5 rounded bg-orange-500 flex items-center justify-center">
+          <span className="text-white font-bold text-[8px]">C</span>
+        </div>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">CtrlAI Nodes</span>
+      </div>
+
+      <div className="h-px bg-neutral-100 mx-2" />
+
       {nodeTypes.map(([type, def]) => (
         <button
           key={type}
           draggable
           onDragStart={(e) => handleDragStart(e, type)}
           onClick={() => handleClick(type)}
-          className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-neutral-700 hover:bg-neutral-50 transition-colors cursor-grab active:cursor-grabbing"
+          className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-sm text-neutral-700 hover:bg-neutral-50 transition-colors cursor-grab active:cursor-grabbing"
           title={def.description}
         >
           <span
-            className="w-6 h-6 rounded-md flex items-center justify-center text-xs"
-            style={{ backgroundColor: `${def.color}15`, color: def.color }}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-xs shrink-0"
+            style={{ backgroundColor: `${def.color}12`, color: def.color }}
           >
             {def.icon}
           </span>
-          <span className="font-medium">{def.label}</span>
+          <div className="text-left">
+            <span className="font-medium text-xs block">{def.label}</span>
+            <span className="text-[10px] text-neutral-400 block leading-tight">{def.description}</span>
+          </div>
         </button>
       ))}
     </div>
