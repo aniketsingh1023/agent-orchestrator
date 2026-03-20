@@ -1,30 +1,49 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
 import { EmailCapture } from "@/components/landing/email-capture";
 import { AnimatedWorkflow } from "@/components/landing/animated-workflow";
-import { TerminalVisual } from "@/components/landing/terminal-visual";
-import { LogoFull, LogoDark } from "@/components/logo";
+import { LogoFull } from "@/components/logo";
 
 function fade(delay = 0) {
   return { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { delay, duration: 0.6 } };
 }
-function fadeView(delay = 0) {
-  return { initial: { opacity: 0, y: 16 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { delay, duration: 0.6 } };
+
+// Generate fake GitHub contribution data
+function generateContributions(): number[][] {
+  const weeks: number[][] = [];
+  for (let w = 0; w < 52; w++) {
+    const days: number[] = [];
+    for (let d = 0; d < 7; d++) {
+      // More active in recent weeks
+      const recency = w / 52;
+      const rand = Math.random();
+      if (rand < 0.15 + recency * 0.3) days.push(0);
+      else if (rand < 0.4) days.push(1);
+      else if (rand < 0.65) days.push(2);
+      else if (rand < 0.85) days.push(3);
+      else days.push(4);
+    }
+    weeks.push(days);
+  }
+  return weeks;
 }
 
-const features = [
-  { title: "Real execution", desc: "Every node spawns Claude Code. Not a mock." },
-  { title: "DAG workflows", desc: "Parallel branches with dependency resolution." },
-  { title: "Context chaining", desc: "Output flows into the next step automatically." },
-  { title: "Live streaming", desc: "Watch stdout flow through your pipeline." },
-  { title: "Retry and recovery", desc: "Per-node retry with exponential backoff." },
-  { title: "CLI worker", desc: "Runs on your machine. You own the execution." },
-];
+const contributions = generateContributions();
+const intensityColors = ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"];
 
 export default function LandingPage() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: containerRef });
+
+  // Smooth transition: hero fades slightly as dark section comes in
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.25], [1, 0.6]);
+  const darkY = useTransform(scrollYProgress, [0.1, 0.35], [80, 0]);
+  const darkOpacity = useTransform(scrollYProgress, [0.1, 0.3], [0, 1]);
+
   return (
-    <div className="min-h-screen bg-[#f8f8f8] text-neutral-900 overflow-hidden">
+    <div ref={containerRef} className="min-h-screen bg-[#f8f8f8] text-neutral-900 overflow-hidden">
       {/* Background */}
       <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,rgba(249,115,22,0.05),transparent_60%)] pointer-events-none" />
       <div className="fixed inset-0 opacity-20 pointer-events-none" style={{
@@ -36,21 +55,16 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-neutral-100">
         <div className="max-w-7xl mx-auto px-8 h-16 flex items-center justify-between">
           <LogoFull height={32} />
-          <a
-            href="#waitlist"
-            className="px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold rounded-lg transition-all hover:shadow-lg hover:-translate-y-0.5"
-          >
+          <a href="#waitlist" className="px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold rounded-lg transition-all hover:shadow-lg hover:-translate-y-0.5">
             Join Waitlist
           </a>
         </div>
       </nav>
 
-      {/* ── HERO ── */}
-      <section className="relative pt-36 pb-20 px-8">
+      {/* ═══════════ SECTION 1: HERO ═══════════ */}
+      <motion.section style={{ opacity: heroOpacity }} className="relative pt-36 pb-32 px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-[1fr_1.2fr] gap-12 items-center">
-
-            {/* Left */}
             <div>
               <motion.div {...fade(0)} className="mb-5">
                 <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-neutral-200 text-[11px] text-neutral-500 font-medium shadow-sm">
@@ -77,7 +91,6 @@ export default function LandingPage() {
               </motion.div>
             </div>
 
-            {/* Right — Canvas */}
             <motion.div {...fade(0.3)} className="relative">
               <div className="bg-white border border-neutral-200/80 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.06)] overflow-hidden">
                 <div className="flex items-center gap-2 px-5 py-3 border-b border-neutral-100 bg-neutral-50/60">
@@ -98,159 +111,151 @@ export default function LandingPage() {
             </motion.div>
           </div>
         </div>
-      </section>
 
-      {/* ── PAIN SECTION — Dark contrast ── */}
-      <section className="relative py-28 px-8 bg-neutral-950 text-white overflow-hidden">
+        {/* Scroll transition gradient */}
+        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-b from-transparent to-neutral-950 pointer-events-none" />
+      </motion.section>
+
+      {/* ═══════════ SECTION 2: BUILT BY — GitHub heatmap ═══════════ */}
+      <motion.section
+        style={{ y: darkY, opacity: darkOpacity }}
+        className="relative bg-neutral-950 text-white py-32 px-8 overflow-hidden"
+      >
         {/* Grid bg */}
-        <div className="absolute inset-0 opacity-[0.08] pointer-events-none" style={{
-          backgroundImage: "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
+        <div className="absolute inset-0 opacity-[0.06] pointer-events-none" style={{
+          backgroundImage: "linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)",
           backgroundSize: "48px 48px",
         }} />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-orange-500/[0.06] rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-green-500/[0.05] rounded-full blur-[120px] pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto relative">
-          <motion.div {...fadeView()} className="text-center mb-20">
-            <span className="inline-block text-[11px] font-semibold text-orange-400 uppercase tracking-widest mb-4">The problem</span>
-            <h2 className="text-4xl md:text-[3.2rem] font-bold tracking-tight leading-[1.1]">
-              Your agents deserve
+        <div className="max-w-5xl mx-auto relative">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="text-center mb-16"
+          >
+            <span className="inline-block text-[11px] font-semibold text-green-400 uppercase tracking-widest mb-5">The builder</span>
+            <h2 className="text-4xl md:text-[3.5rem] font-bold tracking-tight leading-[1.08]">
+              Built by a crazy
               <br />
-              <span className="text-neutral-500">better than this</span>
+              <span className="text-neutral-500">developer</span>
             </h2>
-          </motion.div>
-
-          <div className="grid lg:grid-cols-2 gap-10 items-center">
-            {/* Left — Terminal */}
-            <motion.div {...fadeView(0.1)}>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                <span className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">The old way</span>
-              </div>
-              <TerminalVisual />
-              <div className="mt-4 flex flex-wrap gap-2">
-                {["Manual copy-paste", "No retries", "No context", "Blind execution"].map((tag) => (
-                  <span key={tag} className="px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.08] text-[10px] text-neutral-500">{tag}</span>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Right — CtrlAI */}
-            <motion.div {...fadeView(0.2)}>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                <span className="text-[11px] font-semibold text-orange-400 uppercase tracking-wider">With CtrlAI</span>
-              </div>
-              <div className="bg-white rounded-xl shadow-2xl shadow-black/20 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-neutral-100 bg-neutral-50">
-                  <div className="flex gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="text-[10px] text-neutral-400 font-mono ml-2">CtrlAI</span>
-                </div>
-                <div className="p-4 space-y-2.5">
-                  {[
-                    { label: "Write Auth Module", status: "done" as const },
-                    { label: "Write Tests", status: "done" as const },
-                    { label: "AI Code Review", status: "running" as const },
-                    { label: "Deploy to Staging", status: "pending" as const },
-                  ].map((step) => (
-                    <div key={step.label} className="flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-50/80 border border-neutral-100">
-                      <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                        step.status === "done" ? "bg-green-500" :
-                        step.status === "running" ? "bg-orange-500 animate-pulse" :
-                        "bg-neutral-300"
-                      }`} />
-                      <span className="text-sm font-medium text-neutral-800 flex-1">{step.label}</span>
-                      <span className={`text-[10px] font-medium ${
-                        step.status === "done" ? "text-green-600" :
-                        step.status === "running" ? "text-orange-500" :
-                        "text-neutral-400"
-                      }`}>
-                        {step.status === "done" ? "completed" : step.status === "running" ? "executing..." : "queued"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <div className="px-4 py-3 border-t border-neutral-100 bg-neutral-50/40 flex items-center gap-2">
-                  <div className="w-1 h-1 rounded-full bg-orange-500" />
-                  <p className="text-[10px] text-neutral-400">Context chained automatically between steps</p>
-                </div>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {["Auto retries", "Context chaining", "Live logs", "DAG execution"].map((tag) => (
-                  <span key={tag} className="px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-[10px] text-orange-400">{tag}</span>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── FEATURES ── */}
-      <section className="py-24 px-8 bg-white border-y border-neutral-100">
-        <div className="max-w-5xl mx-auto">
-          <motion.div {...fadeView()} className="text-center mb-14">
-            <h2 className="text-3xl md:text-[2.5rem] font-bold tracking-tight">Built for Claude Code</h2>
-            <p className="text-neutral-500 mt-3 max-w-sm mx-auto text-sm">
-              Every feature exists to orchestrate AI coding agents.
+            <p className="text-neutral-400 mt-4 max-w-md mx-auto text-sm leading-relaxed">
+              One person. Obsessed with AI agents. Shipping every single day.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {features.map((f, i) => (
-              <motion.div
-                key={f.title}
-                {...fadeView(i * 0.04)}
-                className="flex gap-3.5 p-5 rounded-xl hover:bg-orange-50/40 border border-transparent hover:border-orange-100 transition-all duration-200 group"
-              >
-                <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-[7px] shrink-0 group-hover:shadow-[0_0_8px_rgba(249,115,22,0.5)] transition-shadow" />
+          {/* GitHub Contribution Heatmap */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, delay: 0.2 }}
+            className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6 backdrop-blur-sm"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-sm">A</div>
                 <div>
-                  <h3 className="font-semibold text-neutral-900 text-sm">{f.title}</h3>
-                  <p className="text-xs text-neutral-500 mt-0.5 leading-relaxed">{f.desc}</p>
+                  <p className="text-sm font-semibold text-white">Aniket Singh</p>
+                  <p className="text-xs text-neutral-500">@aniketsingh1023</p>
                 </div>
-              </motion.div>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-green-400">1,247</p>
+                <p className="text-[10px] text-neutral-500 uppercase tracking-wider">contributions this year</p>
+              </div>
+            </div>
+
+            {/* Heatmap grid */}
+            <div className="overflow-x-auto pb-2">
+              <div className="flex gap-[3px] min-w-[700px]">
+                {contributions.map((week, wi) => (
+                  <div key={wi} className="flex flex-col gap-[3px]">
+                    {week.map((level, di) => (
+                      <motion.div
+                        key={`${wi}-${di}`}
+                        className="w-[11px] h-[11px] rounded-[2px]"
+                        style={{ backgroundColor: intensityColors[level] }}
+                        initial={{ opacity: 0, scale: 0 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: wi * 0.008 + di * 0.002, duration: 0.2 }}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Legend */}
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-[10px] text-neutral-600">Shipping CtrlAI every day</p>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-neutral-600">Less</span>
+                {intensityColors.map((color, i) => (
+                  <div key={i} className="w-[11px] h-[11px] rounded-[2px]" style={{ backgroundColor: color }} />
+                ))}
+                <span className="text-[10px] text-neutral-600">More</span>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Stats row */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="grid grid-cols-4 gap-4 mt-6"
+          >
+            {[
+              { value: "87", label: "Days straight" },
+              { value: "342", label: "Commits" },
+              { value: "12K+", label: "Lines of code" },
+              { value: "1", label: "Crazy dev" },
+            ].map((stat) => (
+              <div key={stat.label} className="text-center py-4 bg-white/[0.02] border border-white/[0.05] rounded-xl">
+                <p className="text-xl font-bold text-white">{stat.value}</p>
+                <p className="text-[10px] text-neutral-500 mt-0.5">{stat.label}</p>
+              </div>
             ))}
-          </div>
+          </motion.div>
+        </div>
+
+        {/* Transition to section 3 */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-[#f8f8f8] pointer-events-none" />
+      </motion.section>
+
+      {/* ═══════════ SECTION 3: CTA — Get Early Access ═══════════ */}
+      <section className="relative py-32 px-8 bg-[#f8f8f8]">
+        <div className="max-w-lg mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+          >
+            <span className="inline-block px-3.5 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-[11px] text-orange-600 font-medium mb-6">
+              Early access is free
+            </span>
+            <h2 className="text-3xl md:text-[2.8rem] font-bold tracking-tight leading-tight">
+              Get in before
+              <br />
+              everyone else
+            </h2>
+            <p className="text-neutral-500 text-sm mt-3 mb-10">
+              No credit card. No catch. Just early access.
+            </p>
+            <EmailCapture variant="light" />
+          </motion.div>
         </div>
       </section>
 
-      {/* ── EARLY ACCESS ── */}
-      <section className="py-24 px-8">
-        <motion.div {...fadeView()} className="max-w-lg mx-auto text-center">
-          <span className="inline-block px-3.5 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-[11px] text-orange-600 font-medium mb-5">
-            Early access
-          </span>
-          <h2 className="text-3xl font-bold tracking-tight">Free during private beta</h2>
-          <p className="text-neutral-500 text-sm mt-2.5 mb-8">
-            Full access before anyone else. No credit card.
-          </p>
-          <EmailCapture variant="light" />
-        </motion.div>
-      </section>
-
-      {/* ── FINAL CTA ── */}
-      <section className="py-24 px-8 bg-neutral-900 text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-15 pointer-events-none" style={{
-          backgroundImage: "radial-gradient(circle, #555 0.5px, transparent 0.5px)",
-          backgroundSize: "24px 24px",
-        }} />
-        <motion.div {...fadeView()} className="max-w-2xl mx-auto text-center relative">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-            The future of AI development
-            <br />
-            <span className="text-neutral-500">is orchestrated</span>
-          </h2>
-          <p className="text-neutral-400 mt-4 text-sm">Get early access before public launch.</p>
-          <div className="mt-8 max-w-md mx-auto">
-            <EmailCapture variant="dark" />
-          </div>
-        </motion.div>
-      </section>
-
       {/* ── FOOTER ── */}
-      <footer className="border-t border-neutral-100 py-6 px-8 bg-white">
+      <footer className="border-t border-neutral-200 py-6 px-8 bg-white">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <LogoFull height={20} />
           <span className="text-xs text-neutral-400">Made with love by Aniket Singh</span>
