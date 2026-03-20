@@ -13,9 +13,9 @@ export default function DashboardLayout({
         <div className="p-6 border-b border-neutral-200">
           <Link href="/dashboard" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">AO</span>
+              <span className="text-white font-bold text-sm">C</span>
             </div>
-            <span className="font-semibold text-lg">AgentOrch</span>
+            <span className="font-semibold text-lg tracking-tight">CtrlAI</span>
           </Link>
         </div>
         <nav className="flex-1 p-4 space-y-1">
