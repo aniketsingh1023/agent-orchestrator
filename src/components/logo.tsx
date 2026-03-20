@@ -2,9 +2,6 @@
 
 import Image from "next/image";
 
-/**
- * CtrlAI Logo — icon mark only (for navbar, sidebar, small placements)
- */
 export function Logo({ size = 32 }: { size?: number }) {
   return (
     <Image
@@ -17,32 +14,32 @@ export function Logo({ size = 32 }: { size?: number }) {
   );
 }
 
-/**
- * CtrlAI full wordmark on light background
- */
 export function LogoFull({ height = 40 }: { height?: number }) {
+  const width = Math.round(height * 2.25);
   return (
-    <Image
-      src="/logo-light.png"
-      alt="CtrlAI"
-      width={Math.round(height * 2.25)}
-      height={height}
-      className="shrink-0 object-contain"
-    />
+    <div className="flex items-center gap-0 shrink-0">
+      <Image
+        src="/logo-light.png"
+        alt="CtrlAI"
+        width={width}
+        height={height}
+        className="object-contain object-left"
+        style={{ height, width: "auto", maxHeight: height }}
+      />
+    </div>
   );
 }
 
-/**
- * CtrlAI full wordmark on dark background
- */
 export function LogoDark({ height = 40 }: { height?: number }) {
+  const width = Math.round(height * 2.25);
   return (
     <Image
       src="/logo-dark.png"
       alt="CtrlAI"
-      width={Math.round(height * 2.25)}
+      width={width}
       height={height}
       className="shrink-0 object-contain"
+      style={{ height, width: "auto", maxHeight: height }}
     />
   );
 }

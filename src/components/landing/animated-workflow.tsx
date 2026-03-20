@@ -15,11 +15,11 @@ interface WorkflowNode {
 }
 
 const nodes: WorkflowNode[] = [
-  { id: "start", label: "Start", subtitle: "Trigger", x: 60, y: 130, color: "#22c55e" },
-  { id: "write", label: "Write Code", subtitle: "Claude Agent", x: 240, y: 60, color: "#f97316" },
-  { id: "test", label: "Run Tests", subtitle: "Claude Agent", x: 240, y: 200, color: "#f97316" },
-  { id: "review", label: "AI Review", subtitle: "Quality Gate", x: 460, y: 130, color: "#8b5cf6" },
-  { id: "deploy", label: "Deploy", subtitle: "Output", x: 640, y: 130, color: "#3b82f6" },
+  { id: "start", label: "Start", subtitle: "Trigger", x: 20, y: 110, color: "#22c55e" },
+  { id: "write", label: "Write Code", subtitle: "Claude Agent", x: 190, y: 40, color: "#f97316" },
+  { id: "test", label: "Run Tests", subtitle: "Claude Agent", x: 190, y: 180, color: "#f97316" },
+  { id: "review", label: "AI Review", subtitle: "Quality Gate", x: 380, y: 110, color: "#8b5cf6" },
+  { id: "deploy", label: "Deploy", subtitle: "Output", x: 550, y: 110, color: "#3b82f6" },
 ];
 
 const edges: [string, string][] = [
@@ -61,9 +61,9 @@ export function AnimatedWorkflow() {
   }, []);
 
   return (
-    <div className="relative w-full" style={{ maxWidth: 780, height: 290, margin: "0 auto" }}>
+    <div className="relative w-full" style={{ maxWidth: 700, height: 270, margin: "0 auto" }}>
       {/* Edges */}
-      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 780 290" fill="none">
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 700 270" fill="none">
         {edges.map(([from, to]) => {
           const a = getCenter(from);
           const b = getCenter(to);

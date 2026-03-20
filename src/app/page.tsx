@@ -3,7 +3,8 @@
 import { motion } from "framer-motion";
 import { EmailCapture } from "@/components/landing/email-capture";
 import { AnimatedWorkflow } from "@/components/landing/animated-workflow";
-import { Logo, LogoFull, LogoDark } from "@/components/logo";
+import { TerminalVisual } from "@/components/landing/terminal-visual";
+import { LogoFull, LogoDark } from "@/components/logo";
 
 function fade(delay = 0) {
   return { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { delay, duration: 0.6 } };
@@ -21,26 +22,20 @@ const features = [
   { title: "CLI worker", desc: "Runs on your machine. You own the execution." },
 ];
 
-const painPoints = [
-  { title: "No visibility", desc: "You can't see what your agents are doing until they break something." },
-  { title: "No orchestration", desc: "Separate terminals. Manual copy-paste between steps." },
-  { title: "No control", desc: "No retries. No context chaining. No execution history." },
-];
-
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#f8f8f8] text-neutral-900 overflow-hidden">
       {/* Background */}
       <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,rgba(249,115,22,0.05),transparent_60%)] pointer-events-none" />
-      <div className="fixed inset-0 opacity-25 pointer-events-none" style={{
-        backgroundImage: "radial-gradient(circle, #ccc 0.8px, transparent 0.8px)",
+      <div className="fixed inset-0 opacity-20 pointer-events-none" style={{
+        backgroundImage: "radial-gradient(circle, #ccc 0.7px, transparent 0.7px)",
         backgroundSize: "28px 28px",
       }} />
 
       {/* ── NAVBAR ── */}
       <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-neutral-100">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <LogoFull height={36} />
+        <div className="max-w-7xl mx-auto px-8 h-16 flex items-center justify-between">
+          <LogoFull height={32} />
           <a
             href="#waitlist"
             className="px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold rounded-lg transition-all hover:shadow-lg hover:-translate-y-0.5"
@@ -51,9 +46,9 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ── */}
-      <section className="relative pt-36 pb-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-[1fr_1.15fr] gap-16 items-center">
+      <section className="relative pt-36 pb-20 px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-[1fr_1.2fr] gap-12 items-center">
 
             {/* Left */}
             <div>
@@ -64,7 +59,7 @@ export default function LandingPage() {
                 </span>
               </motion.div>
 
-              <motion.h1 {...fade(0.08)} className="text-[3.5rem] md:text-[4rem] font-extrabold tracking-tight leading-[1.05]">
+              <motion.h1 {...fade(0.08)} className="text-[3.5rem] md:text-[4.2rem] font-extrabold tracking-tight leading-[1.05]">
                 Control
                 <br />
                 Claude Code
@@ -72,11 +67,11 @@ export default function LandingPage() {
                 <span className="text-neutral-300 font-bold">like a system</span>
               </motion.h1>
 
-              <motion.p {...fade(0.16)} className="text-base text-neutral-500 mt-5 max-w-[380px] leading-relaxed">
+              <motion.p {...fade(0.16)} className="text-base text-neutral-500 mt-5 max-w-[400px] leading-relaxed">
                 Design agent workflows visually. Execute real tasks. Monitor everything.
               </motion.p>
 
-              <motion.div {...fade(0.24)} className="mt-8 max-w-[420px]" id="waitlist">
+              <motion.div {...fade(0.24)} className="mt-8 max-w-[440px]" id="waitlist">
                 <EmailCapture variant="light" />
                 <p className="text-[11px] text-neutral-400 mt-2.5 ml-1">Private beta. No spam.</p>
               </motion.div>
@@ -85,66 +80,96 @@ export default function LandingPage() {
             {/* Right — Canvas */}
             <motion.div {...fade(0.3)} className="relative">
               <div className="bg-white border border-neutral-200/80 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.06)] overflow-hidden">
-                {/* Window bar */}
-                <div className="flex items-center gap-2 px-5 py-3 border-b border-neutral-100 bg-neutral-50/50">
+                <div className="flex items-center gap-2 px-5 py-3 border-b border-neutral-100 bg-neutral-50/60">
                   <div className="flex gap-1.5">
-                    <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-                    <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-                    <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
                   </div>
                   <div className="flex-1 text-center">
                     <span className="text-[11px] text-neutral-400 font-mono">deploy-pipeline.workflow</span>
                   </div>
                 </div>
-
-                {/* Canvas area */}
-                <div className="p-6 bg-[#fcfcfc]">
+                <div className="p-5 bg-[#fcfcfc]">
                   <AnimatedWorkflow />
                 </div>
               </div>
-
-              {/* Glow */}
               <div className="absolute -inset-6 bg-gradient-to-br from-orange-500/[0.04] to-purple-500/[0.03] rounded-3xl blur-2xl -z-10" />
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* ── PAIN ── */}
-      <section className="py-24 px-6">
-        <div className="max-w-4xl mx-auto">
-          <motion.div {...fadeView()} className="text-center mb-14">
-            <h2 className="text-3xl md:text-[2.5rem] font-bold tracking-tight leading-tight">
+      {/* ── PAIN SECTION — Terminal vs CtrlAI ── */}
+      <section className="py-28 px-8">
+        <div className="max-w-7xl mx-auto">
+          <motion.div {...fadeView()} className="text-center mb-16">
+            <h2 className="text-3xl md:text-[2.8rem] font-bold tracking-tight leading-tight">
               Stop managing agents
               <br />
               in terminals
             </h2>
-            <p className="text-neutral-500 mt-3 max-w-sm mx-auto text-sm">
+            <p className="text-neutral-500 mt-3 max-w-md mx-auto text-sm">
               You have been building AI workflows with copy-paste and prayer.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-4">
-            {painPoints.map((p, i) => (
-              <motion.div
-                key={p.title}
-                {...fadeView(i * 0.08)}
-                className="bg-white border border-neutral-100 rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:border-neutral-200 transition-all duration-300"
-              >
-                <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center mb-4">
-                  <div className="w-2 h-2 rounded-full bg-red-400" />
+          <div className="grid lg:grid-cols-2 gap-8 items-start">
+            {/* Left — Terminal (the old way) */}
+            <motion.div {...fadeView(0.1)}>
+              <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3 ml-1">The old way</p>
+              <TerminalVisual />
+            </motion.div>
+
+            {/* Right — CtrlAI (the new way) */}
+            <motion.div {...fadeView(0.2)}>
+              <p className="text-xs font-semibold text-orange-500 uppercase tracking-wider mb-3 ml-1">With CtrlAI</p>
+              <div className="bg-white border border-neutral-200 rounded-xl shadow-lg overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-neutral-100 bg-neutral-50/60">
+                  <div className="flex gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
+                  </div>
+                  <span className="text-[10px] text-neutral-400 font-mono ml-2">CtrlAI -- workflow canvas</span>
                 </div>
-                <h3 className="font-semibold text-neutral-900 text-[15px]">{p.title}</h3>
-                <p className="text-sm text-neutral-500 mt-2 leading-relaxed">{p.desc}</p>
-              </motion.div>
-            ))}
+                <div className="p-4 space-y-3">
+                  {/* Mini workflow steps */}
+                  {[
+                    { label: "Write Auth Module", status: "done" as const },
+                    { label: "Write Tests", status: "done" as const },
+                    { label: "AI Code Review", status: "running" as const },
+                    { label: "Deploy to Staging", status: "pending" as const },
+                  ].map((step) => (
+                    <div key={step.label} className="flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-50 border border-neutral-100">
+                      <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                        step.status === "done" ? "bg-green-500" :
+                        step.status === "running" ? "bg-orange-500 animate-pulse" :
+                        "bg-neutral-300"
+                      }`} />
+                      <span className="text-sm font-medium text-neutral-800 flex-1">{step.label}</span>
+                      <span className={`text-[10px] font-medium ${
+                        step.status === "done" ? "text-green-600" :
+                        step.status === "running" ? "text-orange-500" :
+                        "text-neutral-400"
+                      }`}>
+                        {step.status === "done" ? "completed" : step.status === "running" ? "executing..." : "queued"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="px-4 py-3 border-t border-neutral-100 bg-neutral-50/40">
+                  <p className="text-[10px] text-neutral-400">Context chained automatically between steps</p>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* ── FEATURES ── */}
-      <section className="py-24 px-6 bg-white border-y border-neutral-100">
-        <div className="max-w-4xl mx-auto">
+      <section className="py-24 px-8 bg-white border-y border-neutral-100">
+        <div className="max-w-5xl mx-auto">
           <motion.div {...fadeView()} className="text-center mb-14">
             <h2 className="text-3xl md:text-[2.5rem] font-bold tracking-tight">Built for Claude Code</h2>
             <p className="text-neutral-500 mt-3 max-w-sm mx-auto text-sm">
@@ -152,12 +177,12 @@ export default function LandingPage() {
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-3">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
             {features.map((f, i) => (
               <motion.div
                 key={f.title}
                 {...fadeView(i * 0.04)}
-                className="flex gap-4 p-5 rounded-xl hover:bg-orange-50/40 border border-transparent hover:border-orange-100 transition-all duration-200 group"
+                className="flex gap-3.5 p-5 rounded-xl hover:bg-orange-50/40 border border-transparent hover:border-orange-100 transition-all duration-200 group"
               >
                 <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-[7px] shrink-0 group-hover:shadow-[0_0_8px_rgba(249,115,22,0.5)] transition-shadow" />
                 <div>
@@ -171,7 +196,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── EARLY ACCESS ── */}
-      <section className="py-24 px-6">
+      <section className="py-24 px-8">
         <motion.div {...fadeView()} className="max-w-lg mx-auto text-center">
           <span className="inline-block px-3.5 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-[11px] text-orange-600 font-medium mb-5">
             Early access
@@ -185,8 +210,8 @@ export default function LandingPage() {
       </section>
 
       {/* ── FINAL CTA ── */}
-      <section className="py-24 px-6 bg-neutral-900 text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-20 pointer-events-none" style={{
+      <section className="py-24 px-8 bg-neutral-900 text-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-15 pointer-events-none" style={{
           backgroundImage: "radial-gradient(circle, #555 0.5px, transparent 0.5px)",
           backgroundSize: "24px 24px",
         }} />
@@ -204,9 +229,9 @@ export default function LandingPage() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="border-t border-neutral-100 py-6 px-6 bg-white">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <LogoFull height={22} />
+      <footer className="border-t border-neutral-100 py-6 px-8 bg-white">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <LogoFull height={20} />
           <span className="text-xs text-neutral-400">Made with love by Aniket Singh</span>
           <a
             href="https://github.com/aniketsingh1023/agent-orchestrator"
