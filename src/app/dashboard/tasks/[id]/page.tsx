@@ -1,7 +1,7 @@
-import { auth } from "@clerk/nextjs/server";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { getOrCreateUser } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -20,13 +20,13 @@ export default async function TaskDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { userId } = await auth();
-  if (!userId) redirect("/sign-in");
+  const user = await getOrCreateUser();
+  if (!user) redirect("/sign-in");
 
   const { id } = await params;
 
   const task = await db.task.findFirst({
-    where: { id, userId },
+    where: { id, userId: user.id },
     include: {
       logs: { orderBy: { timestamp: "asc" } },
     },
