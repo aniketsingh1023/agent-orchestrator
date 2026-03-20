@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -10,4 +5,76 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+enum Plan {
+  FREE
+  PRO
+  TEAM
+}
+
+enum TaskStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum LogStream {
+  STDOUT
+  STDERR
+  SYSTEM
+}
+
+model User {
+  id                 String   @id // Clerk user ID
+  email              String   @unique
+  name               String?
+  plan               Plan     @default(FREE)
+  taskQuota          Int      @default(50)
+  tasksUsedThisMonth Int      @default(0)
+  quotaResetAt       DateTime @default(now())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  tasks Task[]
+
+  @@map("users")
+}
+
+model Task {
+  id           String     @id @default(uuid())
+  name         String
+  prompt       String
+  status       TaskStatus @default(QUEUED)
+  agentType    String     @default("claude-code")
+  result       String?
+  errorMessage String?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  logs TaskLog[]
+
+  @@index([userId, status])
+  @@index([createdAt])
+  @@map("tasks")
+}
+
+model TaskLog {
+  id        String    @id @default(uuid())
+  stream    LogStream @default(STDOUT)
+  content   String
+  timestamp DateTime  @default(now())
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, timestamp])
+  @@map("task_logs")
 }
