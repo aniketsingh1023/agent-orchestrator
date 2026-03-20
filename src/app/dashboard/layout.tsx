@@ -37,6 +37,15 @@ export default function DashboardLayout({
             </svg>
             Tasks
           </Link>
+          <Link
+            href="/dashboard/workflows"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-100 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            Workflows
+          </Link>
         </nav>
         <div className="p-4 border-t border-neutral-200">
           <div className="flex items-center gap-3">
