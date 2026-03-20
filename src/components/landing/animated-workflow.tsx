@@ -3,81 +3,86 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 
-const nodes = [
-  { id: "start", label: "Start", icon: "▶", color: "#22c55e", x: 0, y: 50 },
-  { id: "write", label: "Write Code", icon: "⚡", color: "#f97316", x: 220, y: 10 },
-  { id: "test", label: "Run Tests", icon: "⚡", color: "#f97316", x: 220, y: 90 },
-  { id: "review", label: "AI Review", icon: "🔍", color: "#8b5cf6", x: 440, y: 50 },
-  { id: "output", label: "Deploy", icon: "⬤", color: "#ef4444", x: 620, y: 50 },
-];
-
-const edges = [
-  { from: "start", to: "write" },
-  { from: "start", to: "test" },
-  { from: "write", to: "review" },
-  { from: "test", to: "review" },
-  { from: "review", to: "output" },
-];
-
 type NodeState = "idle" | "running" | "done";
+
+interface WorkflowNode {
+  id: string;
+  label: string;
+  subtitle: string;
+  x: number;
+  y: number;
+  color: string;
+}
+
+const nodes: WorkflowNode[] = [
+  { id: "start", label: "Start", subtitle: "Trigger", x: 60, y: 130, color: "#22c55e" },
+  { id: "write", label: "Write Code", subtitle: "Claude Agent", x: 240, y: 60, color: "#f97316" },
+  { id: "test", label: "Run Tests", subtitle: "Claude Agent", x: 240, y: 200, color: "#f97316" },
+  { id: "review", label: "AI Review", subtitle: "Quality Gate", x: 460, y: 130, color: "#8b5cf6" },
+  { id: "deploy", label: "Deploy", subtitle: "Output", x: 640, y: 130, color: "#3b82f6" },
+];
+
+const edges: [string, string][] = [
+  ["start", "write"],
+  ["start", "test"],
+  ["write", "review"],
+  ["test", "review"],
+  ["review", "deploy"],
+];
+
+function getCenter(id: string): { x: number; y: number } {
+  const n = nodes.find((n) => n.id === id)!;
+  return { x: n.x + 70, y: n.y + 30 };
+}
 
 export function AnimatedWorkflow() {
   const [states, setStates] = useState<Record<string, NodeState>>(() => ({
-    start: "idle", write: "idle", test: "idle", review: "idle", output: "idle",
+    start: "idle", write: "idle", test: "idle", review: "idle", deploy: "idle",
   }));
 
   useEffect(() => {
-    const sequence = [
-      { delay: 800, updates: { start: "running" } as Record<string, NodeState> },
-      { delay: 1400, updates: { start: "done", write: "running", test: "running" } as Record<string, NodeState> },
-      { delay: 3000, updates: { write: "done" } as Record<string, NodeState> },
-      { delay: 3400, updates: { test: "done", review: "running" } as Record<string, NodeState> },
-      { delay: 5000, updates: { review: "done", output: "running" } as Record<string, NodeState> },
-      { delay: 5800, updates: { output: "done" } as Record<string, NodeState> },
-      { delay: 7500, updates: { start: "idle", write: "idle", test: "idle", review: "idle", output: "idle" } as Record<string, NodeState> },
+    const seq: { delay: number; s: Record<string, NodeState> }[] = [
+      { delay: 600, s: { start: "running", write: "idle", test: "idle", review: "idle", deploy: "idle" } },
+      { delay: 1200, s: { start: "done", write: "running", test: "running", review: "idle", deploy: "idle" } },
+      { delay: 2800, s: { start: "done", write: "done", test: "running", review: "idle", deploy: "idle" } },
+      { delay: 3600, s: { start: "done", write: "done", test: "done", review: "running", deploy: "idle" } },
+      { delay: 5200, s: { start: "done", write: "done", test: "done", review: "done", deploy: "running" } },
+      { delay: 6200, s: { start: "done", write: "done", test: "done", review: "done", deploy: "done" } },
+      { delay: 8000, s: { start: "idle", write: "idle", test: "idle", review: "idle", deploy: "idle" } },
     ];
 
     let timeouts: ReturnType<typeof setTimeout>[] = [];
-
-    function runSequence() {
-      timeouts = sequence.map(({ delay, updates }) =>
-        setTimeout(() => setStates((s) => ({ ...s, ...updates })), delay)
-      );
-      // Loop
-      timeouts.push(setTimeout(runSequence, 8500));
+    function run() {
+      timeouts = seq.map(({ delay, s }) => setTimeout(() => setStates(s), delay));
+      timeouts.push(setTimeout(run, 9000));
     }
-
-    runSequence();
+    run();
     return () => timeouts.forEach(clearTimeout);
   }, []);
 
-  const getNodePos = (id: string) => nodes.find((n) => n.id === id)!;
-
   return (
-    <div className="relative w-full max-w-[720px] h-[180px] mx-auto">
+    <div className="relative w-full" style={{ maxWidth: 780, height: 290, margin: "0 auto" }}>
       {/* Edges */}
-      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 720 180">
-        {edges.map((edge) => {
-          const from = getNodePos(edge.from);
-          const to = getNodePos(edge.to);
-          const fromState = states[edge.from];
-          const isActive = fromState === "done";
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 780 290" fill="none">
+        {edges.map(([from, to]) => {
+          const a = getCenter(from);
+          const b = getCenter(to);
+          const fromDone = states[from] === "done";
+          const midX = (a.x + b.x) / 2;
 
           return (
-            <motion.line
-              key={`${edge.from}-${edge.to}`}
-              x1={from.x + 80}
-              y1={from.y + 28}
-              x2={to.x + 20}
-              y2={to.y + 28}
-              stroke={isActive ? "#f97316" : "#333"}
-              strokeWidth={2}
-              strokeDasharray={isActive ? "0" : "6 4"}
+            <motion.path
+              key={`${from}-${to}`}
+              d={`M ${a.x} ${a.y} C ${midX} ${a.y}, ${midX} ${b.y}, ${b.x} ${b.y}`}
+              stroke={fromDone ? "#f97316" : "#e5e5e5"}
+              strokeWidth={fromDone ? 2.5 : 1.5}
+              fill="none"
+              strokeDasharray={fromDone ? "0" : "6 6"}
               animate={{
-                stroke: isActive ? "#f97316" : "#333",
-                opacity: isActive ? 1 : 0.3,
+                stroke: fromDone ? "#f97316" : "#e5e5e5",
+                strokeWidth: fromDone ? 2.5 : 1.5,
               }}
-              transition={{ duration: 0.4 }}
+              transition={{ duration: 0.5 }}
             />
           );
         })}
@@ -86,70 +91,91 @@ export function AnimatedWorkflow() {
       {/* Nodes */}
       {nodes.map((node) => {
         const state = states[node.id];
-        const borderColor =
-          state === "running" ? node.color :
-          state === "done" ? "#22c55e" :
-          "#333";
+        const isRunning = state === "running";
+        const isDone = state === "done";
 
         return (
           <motion.div
             key={node.id}
             className="absolute"
-            style={{ left: node.x + 20, top: node.y }}
-            animate={{
-              scale: state === "running" ? 1.05 : 1,
-            }}
-            transition={{ duration: 0.3 }}
+            style={{ left: node.x, top: node.y, width: 140 }}
+            animate={{ scale: isRunning ? 1.04 : 1, y: isRunning ? -2 : 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
           >
-            <motion.div
-              className="relative px-4 py-2.5 rounded-xl border-2 bg-neutral-900/80 backdrop-blur-sm min-w-[120px]"
-              animate={{
-                borderColor,
-                boxShadow: state === "running"
-                  ? `0 0 24px ${node.color}30`
-                  : state === "done"
-                    ? "0 0 16px rgba(34,197,94,0.15)"
-                    : "0 0 0 transparent",
+            {/* Glow */}
+            {isRunning && (
+              <motion.div
+                className="absolute -inset-3 rounded-2xl"
+                style={{ background: `radial-gradient(circle, ${node.color}18 0%, transparent 70%)` }}
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
+            )}
+
+            <div
+              className={`
+                relative bg-white rounded-xl px-4 py-3.5 transition-all duration-400
+                ${isRunning ? "shadow-xl" : isDone ? "shadow-md" : "shadow-sm"}
+              `}
+              style={{
+                borderWidth: 2,
+                borderStyle: "solid",
+                borderColor: isRunning ? node.color : isDone ? "#22c55e" : "#f0f0f0",
+                boxShadow: isRunning
+                  ? `0 8px 32px ${node.color}20, 0 2px 8px rgba(0,0,0,0.06)`
+                  : isDone
+                    ? "0 4px 16px rgba(34,197,94,0.08), 0 2px 6px rgba(0,0,0,0.04)"
+                    : "0 2px 8px rgba(0,0,0,0.04)",
               }}
-              transition={{ duration: 0.4 }}
             >
-              <div className="flex items-center gap-2">
-                <span className="text-xs">{node.icon}</span>
-                <span className="text-xs font-medium text-white">{node.label}</span>
+              {/* Status dot */}
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider">
+                  {node.subtitle}
+                </span>
                 <motion.div
-                  className="w-2 h-2 rounded-full ml-auto"
+                  className="w-2.5 h-2.5 rounded-full"
                   animate={{
-                    backgroundColor:
-                      state === "running" ? node.color :
-                      state === "done" ? "#22c55e" :
-                      "#555",
-                    scale: state === "running" ? [1, 1.3, 1] : 1,
+                    backgroundColor: isRunning ? node.color : isDone ? "#22c55e" : "#d4d4d4",
+                    scale: isRunning ? [1, 1.4, 1] : 1,
                   }}
                   transition={{
-                    duration: state === "running" ? 0.8 : 0.3,
-                    repeat: state === "running" ? Infinity : 0,
+                    duration: isRunning ? 0.9 : 0.3,
+                    repeat: isRunning ? Infinity : 0,
                   }}
                 />
               </div>
-              {state === "running" && (
+
+              <p className="text-sm font-semibold text-neutral-800">{node.label}</p>
+
+              {/* Status text */}
+              {isRunning && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="mt-1.5"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <motion.div
+                      className="w-1 h-1 rounded-full"
+                      style={{ backgroundColor: node.color }}
+                      animate={{ opacity: [1, 0.3, 1] }}
+                      transition={{ duration: 0.6, repeat: Infinity }}
+                    />
+                    <span className="text-[10px] font-mono text-neutral-400">executing...</span>
+                  </div>
+                </motion.div>
+              )}
+              {isDone && (
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="text-[10px] text-neutral-500 mt-1 font-mono"
+                  className="text-[10px] text-green-600 mt-1 font-medium"
                 >
-                  executing...
+                  completed
                 </motion.p>
               )}
-              {state === "done" && (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-[10px] text-green-500/70 mt-1"
-                >
-                  ✓ done
-                </motion.p>
-              )}
-            </motion.div>
+            </div>
           </motion.div>
         );
       })}

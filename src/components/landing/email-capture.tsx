@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export function EmailCapture({ className = "" }: { className?: string }) {
+export function EmailCapture({ variant = "dark" }: { variant?: "dark" | "light" }) {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -30,32 +30,40 @@ export function EmailCapture({ className = "" }: { className?: string }) {
 
   if (state === "success") {
     return (
-      <div className={`flex items-center gap-3 px-6 py-4 bg-green-500/10 border border-green-500/20 rounded-2xl ${className}`}>
-        <span className="text-green-400 text-lg">✓</span>
-        <span className="text-green-300 text-sm font-medium">{message}</span>
+      <div className="flex items-center gap-3 px-5 py-3.5 bg-green-50 border border-green-200 rounded-xl">
+        <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <span className="text-green-700 text-sm font-medium">{message}</span>
       </div>
     );
   }
 
+  const isDark = variant === "dark";
+
   return (
-    <form onSubmit={handleSubmit} className={`flex gap-2 ${className}`}>
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="you@company.com"
-        required
-        className="flex-1 px-5 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-neutral-500 text-sm focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20 transition-all"
-      />
-      <button
-        type="submit"
-        disabled={state === "loading"}
-        className="px-6 py-3.5 bg-orange-500 hover:bg-orange-400 text-white text-sm font-semibold rounded-xl transition-all hover:shadow-[0_0_24px_rgba(249,115,22,0.3)] disabled:opacity-50 shrink-0"
-      >
-        {state === "loading" ? "..." : "Get Early Access"}
-      </button>
+    <form onSubmit={handleSubmit} className="relative">
+      <div className={`flex gap-2 p-1.5 rounded-xl border ${isDark ? "bg-neutral-900 border-neutral-800" : "bg-white border-neutral-200 shadow-lg shadow-neutral-200/50"}`}>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@company.com"
+          required
+          className={`flex-1 px-4 py-3 rounded-lg text-sm focus:outline-none bg-transparent ${isDark ? "text-white placeholder:text-neutral-500" : "text-neutral-900 placeholder:text-neutral-400"}`}
+        />
+        <button
+          type="submit"
+          disabled={state === "loading"}
+          className="px-5 py-3 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-all hover:shadow-lg hover:shadow-orange-500/25 disabled:opacity-50 shrink-0"
+        >
+          {state === "loading" ? "Joining..." : "Get Early Access"}
+        </button>
+      </div>
       {state === "error" && (
-        <p className="absolute -bottom-6 left-0 text-xs text-red-400">{message}</p>
+        <p className="text-xs text-red-500 mt-2 ml-2">{message}</p>
       )}
     </form>
   );
