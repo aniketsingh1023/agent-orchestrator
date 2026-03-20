@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { z } from "zod/v4";
 import { db } from "@/lib/db";
 import { taskQueue } from "@/lib/queue";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 const createTaskSchema = z.object({
   name: z.string().min(1).max(200),
@@ -14,6 +15,9 @@ const createTaskSchema = z.object({
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Rate limit
+  if (!rateLimit(userId).success) return rateLimitResponse();
 
   const user = await db.user.findUnique({ where: { id: userId } });
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
