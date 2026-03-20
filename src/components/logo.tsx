@@ -5,7 +5,7 @@ import Image from "next/image";
 export function Logo({ size = 32 }: { size?: number }) {
   return (
     <Image
-      src="/logo-icon.png"
+      src="/logo.png"
       alt="CtrlAI"
       width={size}
       height={size}
@@ -18,7 +18,7 @@ export function LogoFull({ height = 32 }: { height?: number }) {
   return (
     <div className="flex items-center gap-2 shrink-0">
       <Image
-        src="/logo-icon.png"
+        src="/logo.png"
         alt="CtrlAI"
         width={height}
         height={height}
@@ -33,7 +33,7 @@ export function LogoDark({ height = 32 }: { height?: number }) {
   return (
     <div className="flex items-center gap-2 shrink-0">
       <Image
-        src="/logo-icon.png"
+        src="/logo.png"
         alt="CtrlAI"
         width={height}
         height={height}
