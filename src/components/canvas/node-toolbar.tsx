@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import { Logo } from "@/components/logo";
 import { type NodeType, NODE_DEFINITIONS } from "@/types/workflow";
 import { useWorkflowStore } from "@/stores/workflow-store";
 import { useReactFlow } from "@xyflow/react";
@@ -30,7 +30,7 @@ export function NodeToolbar() {
         onClick={() => setCollapsed(!collapsed)}
         className={`flex items-center gap-2 w-full rounded-xl hover:bg-neutral-50 transition-colors ${collapsed ? "justify-center p-2" : "px-3 py-2"}`}
       >
-        <Image src="/logo.jpeg" alt="CtrlAI" width={24} height={24} className="rounded-md shrink-0" />
+        <Logo size={24} />
         {!collapsed && (
           <>
             <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 flex-1 text-left">Nodes</span>

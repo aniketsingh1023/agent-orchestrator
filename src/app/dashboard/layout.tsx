@@ -1,6 +1,6 @@
 import { UserButton, SignOutButton } from "@clerk/nextjs";
-import Image from "next/image";
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 
 export default function DashboardLayout({
   children,
@@ -13,7 +13,7 @@ export default function DashboardLayout({
       <aside className="w-64 border-r border-neutral-200 bg-neutral-50 flex flex-col">
         <div className="p-6 border-b border-neutral-200">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <Image src="/logo.jpeg" alt="CtrlAI" width={32} height={32} className="rounded-lg" />
+            <Logo size={32} />
             <span className="font-semibold text-lg tracking-tight">CtrlAI</span>
           </Link>
         </div>

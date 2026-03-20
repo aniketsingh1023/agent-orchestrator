@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { motion } from "framer-motion";
 import { EmailCapture } from "@/components/landing/email-capture";
 import { AnimatedWorkflow } from "@/components/landing/animated-workflow";
+import { Logo } from "@/components/logo";
 
 function fade(delay = 0) {
   return { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { delay, duration: 0.7 } };
@@ -22,26 +22,17 @@ const features = [
 ];
 
 const painPoints = [
-  {
-    title: "No visibility",
-    desc: "You can't see what your agents are doing until they break something.",
-  },
-  {
-    title: "No orchestration",
-    desc: "Separate terminals. Manual copy-paste. No dependency management.",
-  },
-  {
-    title: "No control",
-    desc: "No retries. No context chaining. No execution history. Just hope.",
-  },
+  { title: "No visibility", desc: "You can't see what your agents are doing until they break something." },
+  { title: "No orchestration", desc: "Separate terminals. Manual copy-paste. No dependency management." },
+  { title: "No control", desc: "No retries. No context chaining. No execution history. Just hope." },
 ];
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#fafafa] text-neutral-900 overflow-hidden">
-      {/* Background texture */}
+      {/* Background */}
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(249,115,22,0.04),transparent_50%)] pointer-events-none" />
-      <div className="fixed inset-0 opacity-[0.35] pointer-events-none" style={{
+      <div className="fixed inset-0 opacity-[0.3] pointer-events-none" style={{
         backgroundImage: "radial-gradient(circle, #d4d4d4 1px, transparent 1px)",
         backgroundSize: "32px 32px",
       }} />
@@ -50,72 +41,69 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-xl border-b border-neutral-200/60">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <Image src="/logo.jpeg" alt="CtrlAI" width={32} height={32} />
-            <span className="font-bold text-lg tracking-tight">CtrlAI</span>
+            <Logo size={36} />
+            <span className="font-bold text-xl tracking-tight">CtrlAI</span>
           </div>
           <a
             href="#waitlist"
-            className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold rounded-lg transition-all hover:shadow-lg"
+            className="px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-semibold rounded-lg transition-all hover:shadow-lg"
           >
             Join Waitlist
           </a>
         </div>
       </nav>
 
-      {/* ── HERO ── */}
-      <section className="relative pt-40 pb-12 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          {/* Badge */}
-          <motion.div {...fade(0)} className="mb-8">
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-neutral-200 shadow-sm text-xs text-neutral-500 font-medium">
-              <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-              Private beta -- limited spots
-            </span>
-          </motion.div>
+      {/* ── HERO (split layout) ── */}
+      <section className="relative pt-32 pb-16 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left — text + CTA */}
+            <div>
+              <motion.div {...fade(0)} className="mb-6">
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-neutral-200 shadow-sm text-xs text-neutral-500 font-medium">
+                  <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                  Private beta -- limited spots
+                </span>
+              </motion.div>
 
-          {/* Logo mark */}
-          <motion.div {...fade(0.05)} className="flex justify-center mb-8">
-            <Image src="/logo.jpeg" alt="CtrlAI" width={56} height={56} className="drop-shadow-lg" />
-          </motion.div>
+              <motion.h1 {...fade(0.1)} className="text-5xl md:text-6xl font-bold tracking-tight leading-[1.08]">
+                Control
+                <br />
+                Claude Code
+                <br />
+                <span className="text-neutral-400">like a system</span>
+              </motion.h1>
 
-          {/* Headline */}
-          <motion.h1 {...fade(0.1)} className="text-5xl md:text-[4.2rem] font-bold tracking-tight leading-[1.1]">
-            Control Claude Code
-            <br />
-            <span className="text-neutral-400">with real execution workflows</span>
-          </motion.h1>
+              <motion.p {...fade(0.2)} className="text-lg text-neutral-500 mt-6 max-w-md leading-relaxed">
+                Design agent workflows visually. Execute real tasks. Monitor everything.
+              </motion.p>
 
-          {/* Subtext */}
-          <motion.p {...fade(0.2)} className="text-lg text-neutral-500 mt-6 max-w-lg mx-auto leading-relaxed">
-            Design agent workflows visually. Execute real tasks. Monitor everything.
-          </motion.p>
+              <motion.div {...fade(0.3)} className="mt-8 max-w-md" id="waitlist">
+                <EmailCapture variant="light" />
+                <p className="text-xs text-neutral-400 mt-3">Private beta. No spam.</p>
+              </motion.div>
+            </div>
 
-          {/* CTA */}
-          <motion.div {...fade(0.3)} className="mt-10 max-w-md mx-auto" id="waitlist">
-            <EmailCapture variant="light" />
-            <p className="text-xs text-neutral-400 mt-3">Private beta. No spam.</p>
-          </motion.div>
-        </div>
-      </section>
+            {/* Right — animated canvas */}
+            <motion.div {...fade(0.4)} className="relative">
+              <div className="bg-white/60 backdrop-blur-sm border border-neutral-200/60 rounded-2xl shadow-xl shadow-neutral-200/40 p-6 pt-5">
+                {/* Window chrome */}
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-2.5 h-2.5 rounded-full bg-neutral-300" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-neutral-300" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-neutral-300" />
+                  <div className="flex-1" />
+                  <span className="text-[10px] text-neutral-400 font-mono">deploy-pipeline</span>
+                </div>
 
-      {/* ── HERO VISUAL ── */}
-      <section className="pb-20 px-6">
-        <motion.div {...fade(0.5)}>
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white/60 backdrop-blur-sm border border-neutral-200/60 rounded-3xl shadow-xl shadow-neutral-200/40 p-10 pt-8">
-              {/* Toolbar hint */}
-              <div className="flex items-center gap-2 mb-6">
-                <div className="w-3 h-3 rounded-full bg-neutral-200" />
-                <div className="w-3 h-3 rounded-full bg-neutral-200" />
-                <div className="w-3 h-3 rounded-full bg-neutral-200" />
-                <div className="flex-1" />
-                <span className="text-[10px] text-neutral-400 font-mono">workflow: deploy-pipeline</span>
+                <AnimatedWorkflow />
               </div>
 
-              <AnimatedWorkflow />
-            </div>
+              {/* Floating accent shadow */}
+              <div className="absolute -inset-4 bg-orange-500/5 rounded-3xl blur-3xl -z-10" />
+            </motion.div>
           </div>
-        </motion.div>
+        </div>
       </section>
 
       {/* ── PAIN SECTION ── */}
@@ -152,9 +140,7 @@ export default function LandingPage() {
       <section className="py-24 px-6 bg-white border-y border-neutral-200/60">
         <div className="max-w-4xl mx-auto">
           <motion.div {...fadeView()} className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Built for Claude Code
-            </h2>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Built for Claude Code</h2>
             <p className="text-neutral-500 mt-3 max-w-md mx-auto">
               Not another generic automation tool. Every feature orchestrates AI coding agents.
             </p>
@@ -184,9 +170,7 @@ export default function LandingPage() {
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-50 border border-orange-200 text-xs text-orange-600 font-medium mb-6">
             Early access
           </div>
-          <h2 className="text-3xl font-bold tracking-tight">
-            Free during private beta
-          </h2>
+          <h2 className="text-3xl font-bold tracking-tight">Free during private beta</h2>
           <p className="text-neutral-500 text-sm mt-3 mb-8">
             Full access before anyone else. No credit card. No catch.
           </p>
@@ -202,9 +186,7 @@ export default function LandingPage() {
             <br />
             <span className="text-neutral-500">is orchestrated</span>
           </h2>
-          <p className="text-neutral-400 mt-4 text-sm">
-            Get early access before public launch.
-          </p>
+          <p className="text-neutral-400 mt-4 text-sm">Get early access before public launch.</p>
           <div className="mt-8 max-w-md mx-auto">
             <EmailCapture variant="dark" />
           </div>
@@ -215,7 +197,7 @@ export default function LandingPage() {
       <footer className="border-t border-neutral-200 py-8 px-6 bg-white">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Image src="/logo.jpeg" alt="CtrlAI" width={20} height={20} />
+            <Logo size={20} />
             <span className="text-xs text-neutral-500 font-medium">CtrlAI</span>
           </div>
           <span className="text-xs text-neutral-400">Made with love by Aniket Singh</span>
