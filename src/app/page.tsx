@@ -100,48 +100,63 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── PAIN SECTION — Terminal vs CtrlAI ── */}
-      <section className="py-28 px-8">
-        <div className="max-w-7xl mx-auto">
-          <motion.div {...fadeView()} className="text-center mb-16">
-            <h2 className="text-3xl md:text-[2.8rem] font-bold tracking-tight leading-tight">
-              Stop managing agents
+      {/* ── PAIN SECTION — Dark contrast ── */}
+      <section className="relative py-28 px-8 bg-neutral-950 text-white overflow-hidden">
+        {/* Grid bg */}
+        <div className="absolute inset-0 opacity-[0.08] pointer-events-none" style={{
+          backgroundImage: "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
+        }} />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-orange-500/[0.06] rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto relative">
+          <motion.div {...fadeView()} className="text-center mb-20">
+            <span className="inline-block text-[11px] font-semibold text-orange-400 uppercase tracking-widest mb-4">The problem</span>
+            <h2 className="text-4xl md:text-[3.2rem] font-bold tracking-tight leading-[1.1]">
+              Your agents deserve
               <br />
-              in terminals
+              <span className="text-neutral-500">better than this</span>
             </h2>
-            <p className="text-neutral-500 mt-3 max-w-md mx-auto text-sm">
-              You have been building AI workflows with copy-paste and prayer.
-            </p>
           </motion.div>
 
-          <div className="grid lg:grid-cols-2 gap-8 items-start">
-            {/* Left — Terminal (the old way) */}
+          <div className="grid lg:grid-cols-2 gap-10 items-center">
+            {/* Left — Terminal */}
             <motion.div {...fadeView(0.1)}>
-              <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3 ml-1">The old way</p>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                <span className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">The old way</span>
+              </div>
               <TerminalVisual />
+              <div className="mt-4 flex flex-wrap gap-2">
+                {["Manual copy-paste", "No retries", "No context", "Blind execution"].map((tag) => (
+                  <span key={tag} className="px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.08] text-[10px] text-neutral-500">{tag}</span>
+                ))}
+              </div>
             </motion.div>
 
-            {/* Right — CtrlAI (the new way) */}
+            {/* Right — CtrlAI */}
             <motion.div {...fadeView(0.2)}>
-              <p className="text-xs font-semibold text-orange-500 uppercase tracking-wider mb-3 ml-1">With CtrlAI</p>
-              <div className="bg-white border border-neutral-200 rounded-xl shadow-lg overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-neutral-100 bg-neutral-50/60">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                <span className="text-[11px] font-semibold text-orange-400 uppercase tracking-wider">With CtrlAI</span>
+              </div>
+              <div className="bg-white rounded-xl shadow-2xl shadow-black/20 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-neutral-100 bg-neutral-50">
                   <div className="flex gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
                     <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
                     <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
                   </div>
-                  <span className="text-[10px] text-neutral-400 font-mono ml-2">CtrlAI -- workflow canvas</span>
+                  <span className="text-[10px] text-neutral-400 font-mono ml-2">CtrlAI</span>
                 </div>
-                <div className="p-4 space-y-3">
-                  {/* Mini workflow steps */}
+                <div className="p-4 space-y-2.5">
                   {[
                     { label: "Write Auth Module", status: "done" as const },
                     { label: "Write Tests", status: "done" as const },
                     { label: "AI Code Review", status: "running" as const },
                     { label: "Deploy to Staging", status: "pending" as const },
                   ].map((step) => (
-                    <div key={step.label} className="flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-50 border border-neutral-100">
+                    <div key={step.label} className="flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-50/80 border border-neutral-100">
                       <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${
                         step.status === "done" ? "bg-green-500" :
                         step.status === "running" ? "bg-orange-500 animate-pulse" :
@@ -158,9 +173,15 @@ export default function LandingPage() {
                     </div>
                   ))}
                 </div>
-                <div className="px-4 py-3 border-t border-neutral-100 bg-neutral-50/40">
+                <div className="px-4 py-3 border-t border-neutral-100 bg-neutral-50/40 flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-orange-500" />
                   <p className="text-[10px] text-neutral-400">Context chained automatically between steps</p>
                 </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {["Auto retries", "Context chaining", "Live logs", "DAG execution"].map((tag) => (
+                  <span key={tag} className="px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-[10px] text-orange-400">{tag}</span>
+                ))}
               </div>
             </motion.div>
           </div>

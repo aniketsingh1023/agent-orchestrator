@@ -15,11 +15,11 @@ interface WorkflowNode {
 }
 
 const nodes: WorkflowNode[] = [
-  { id: "start", label: "Start", subtitle: "Trigger", x: 20, y: 110, color: "#22c55e" },
-  { id: "write", label: "Write Code", subtitle: "Claude Agent", x: 190, y: 40, color: "#f97316" },
-  { id: "test", label: "Run Tests", subtitle: "Claude Agent", x: 190, y: 180, color: "#f97316" },
-  { id: "review", label: "AI Review", subtitle: "Quality Gate", x: 380, y: 110, color: "#8b5cf6" },
-  { id: "deploy", label: "Deploy", subtitle: "Output", x: 550, y: 110, color: "#3b82f6" },
+  { id: "start", label: "Start", subtitle: "Trigger", x: 10, y: 95, color: "#22c55e" },
+  { id: "write", label: "Write Code", subtitle: "Claude Agent", x: 155, y: 25, color: "#f97316" },
+  { id: "test", label: "Run Tests", subtitle: "Claude Agent", x: 155, y: 165, color: "#f97316" },
+  { id: "review", label: "AI Review", subtitle: "Quality Gate", x: 310, y: 95, color: "#8b5cf6" },
+  { id: "deploy", label: "Deploy", subtitle: "Output", x: 455, y: 95, color: "#3b82f6" },
 ];
 
 const edges: [string, string][] = [
@@ -32,7 +32,7 @@ const edges: [string, string][] = [
 
 function getCenter(id: string): { x: number; y: number } {
   const n = nodes.find((n) => n.id === id)!;
-  return { x: n.x + 70, y: n.y + 30 };
+  return { x: n.x + 57, y: n.y + 26 };
 }
 
 export function AnimatedWorkflow() {
@@ -61,9 +61,9 @@ export function AnimatedWorkflow() {
   }, []);
 
   return (
-    <div className="relative w-full" style={{ maxWidth: 700, height: 270, margin: "0 auto" }}>
+    <div className="relative w-full" style={{ height: 240 }}>
       {/* Edges */}
-      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 700 270" fill="none">
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 575 240" preserveAspectRatio="xMidYMid meet" fill="none">
         {edges.map(([from, to]) => {
           const a = getCenter(from);
           const b = getCenter(to);
@@ -75,12 +75,12 @@ export function AnimatedWorkflow() {
               key={`${from}-${to}`}
               d={`M ${a.x} ${a.y} C ${midX} ${a.y}, ${midX} ${b.y}, ${b.x} ${b.y}`}
               stroke={fromDone ? "#f97316" : "#e5e5e5"}
-              strokeWidth={fromDone ? 2.5 : 1.5}
+              strokeWidth={fromDone ? 2 : 1.5}
               fill="none"
-              strokeDasharray={fromDone ? "0" : "6 6"}
+              strokeDasharray={fromDone ? "0" : "5 5"}
               animate={{
                 stroke: fromDone ? "#f97316" : "#e5e5e5",
-                strokeWidth: fromDone ? 2.5 : 1.5,
+                strokeWidth: fromDone ? 2 : 1.5,
               }}
               transition={{ duration: 0.5 }}
             />
@@ -98,80 +98,58 @@ export function AnimatedWorkflow() {
           <motion.div
             key={node.id}
             className="absolute"
-            style={{ left: node.x, top: node.y, width: 140 }}
-            animate={{ scale: isRunning ? 1.04 : 1, y: isRunning ? -2 : 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
+            style={{ left: node.x, top: node.y, width: 115 }}
+            animate={{ scale: isRunning ? 1.03 : 1, y: isRunning ? -1 : 0 }}
+            transition={{ duration: 0.3 }}
           >
-            {/* Glow */}
             {isRunning && (
               <motion.div
-                className="absolute -inset-3 rounded-2xl"
-                style={{ background: `radial-gradient(circle, ${node.color}18 0%, transparent 70%)` }}
-                animate={{ opacity: [0.5, 1, 0.5] }}
+                className="absolute -inset-2 rounded-xl"
+                style={{ background: `radial-gradient(circle, ${node.color}15 0%, transparent 70%)` }}
+                animate={{ opacity: [0.4, 0.8, 0.4] }}
                 transition={{ duration: 1.5, repeat: Infinity }}
               />
             )}
 
             <div
-              className={`
-                relative bg-white rounded-xl px-4 py-3.5 transition-all duration-400
-                ${isRunning ? "shadow-xl" : isDone ? "shadow-md" : "shadow-sm"}
-              `}
+              className="relative bg-white rounded-lg px-3 py-2.5"
               style={{
-                borderWidth: 2,
+                borderWidth: 1.5,
                 borderStyle: "solid",
-                borderColor: isRunning ? node.color : isDone ? "#22c55e" : "#f0f0f0",
+                borderColor: isRunning ? node.color : isDone ? "#22c55e" : "#e8e8e8",
                 boxShadow: isRunning
-                  ? `0 8px 32px ${node.color}20, 0 2px 8px rgba(0,0,0,0.06)`
+                  ? `0 4px 20px ${node.color}18`
                   : isDone
-                    ? "0 4px 16px rgba(34,197,94,0.08), 0 2px 6px rgba(0,0,0,0.04)"
-                    : "0 2px 8px rgba(0,0,0,0.04)",
+                    ? "0 2px 8px rgba(34,197,94,0.06)"
+                    : "0 1px 4px rgba(0,0,0,0.03)",
               }}
             >
-              {/* Status dot */}
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[8px] font-semibold text-neutral-400 uppercase tracking-wider">
                   {node.subtitle}
                 </span>
                 <motion.div
-                  className="w-2.5 h-2.5 rounded-full"
+                  className="w-2 h-2 rounded-full"
                   animate={{
                     backgroundColor: isRunning ? node.color : isDone ? "#22c55e" : "#d4d4d4",
-                    scale: isRunning ? [1, 1.4, 1] : 1,
+                    scale: isRunning ? [1, 1.3, 1] : 1,
                   }}
                   transition={{
-                    duration: isRunning ? 0.9 : 0.3,
+                    duration: isRunning ? 0.8 : 0.3,
                     repeat: isRunning ? Infinity : 0,
                   }}
                 />
               </div>
-
-              <p className="text-sm font-semibold text-neutral-800">{node.label}</p>
-
-              {/* Status text */}
+              <p className="text-xs font-semibold text-neutral-800">{node.label}</p>
               {isRunning && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  className="mt-1.5"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <motion.div
-                      className="w-1 h-1 rounded-full"
-                      style={{ backgroundColor: node.color }}
-                      animate={{ opacity: [1, 0.3, 1] }}
-                      transition={{ duration: 0.6, repeat: Infinity }}
-                    />
-                    <span className="text-[10px] font-mono text-neutral-400">executing...</span>
-                  </div>
-                </motion.div>
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  className="text-[9px] font-mono text-neutral-400 mt-0.5">
+                  executing...
+                </motion.p>
               )}
               {isDone && (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-[10px] text-green-600 mt-1 font-medium"
-                >
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  className="text-[9px] text-green-600 mt-0.5 font-medium">
                   completed
                 </motion.p>
               )}
