@@ -1,7 +1,7 @@
-import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { getOrCreateUser } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -22,11 +22,11 @@ const statusColors: Record<string, string> = {
 };
 
 export default async function TasksPage() {
-  const { userId } = await auth();
-  if (!userId) redirect("/sign-in");
+  const user = await getOrCreateUser();
+  if (!user) redirect("/sign-in");
 
   const tasks = await db.task.findMany({
-    where: { userId },
+    where: { userId: user.id },
     orderBy: { createdAt: "desc" },
     take: 50,
   });

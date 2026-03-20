@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Agent Orchestrator",
-  description: "AI Agent Orchestration Dashboard",
+  title: "CtrlAI — Control Claude Code with Workflows",
+  description: "Visual workflow builder for orchestrating Claude Code agents. Build pipelines, chain context, stream execution live.",
 };
 
 export default function RootLayout({

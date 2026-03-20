@@ -38,7 +38,8 @@ model User {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  tasks Task[]
+  tasks     Task[]
+  workflows Workflow[]
 
   @@map("users")
 }
@@ -77,4 +78,129 @@ model TaskLog {
 
   @@index([taskId, timestamp])
   @@map("task_logs")
+}
+
+// ── Phase 2: Workflows ──────────────────────────────
+
+enum WorkflowStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum ExecutionStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model Workflow {
+  id          String         @id @default(uuid())
+  name        String
+  description String?
+  status      WorkflowStatus @default(DRAFT)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  steps      WorkflowStep[]
+  executions WorkflowExecution[]
+
+  @@index([userId])
+  @@map("workflows")
+}
+
+model WorkflowStep {
+  id            String @id @default(uuid())
+  name          String
+  prompt        String
+  agentType     String @default("claude-code")
+  positionX     Int    @default(0)
+  positionY     Int    @default(0)
+  maxRetries    Int    @default(3)
+  retryDelayMs  Int    @default(5000)
+
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  // Dependencies: steps that must complete before this one runs
+  dependsOn  WorkflowStepDependency[] @relation("dependent")
+  dependedBy WorkflowStepDependency[] @relation("dependency")
+
+  stepExecutions StepExecution[]
+
+  @@index([workflowId])
+  @@map("workflow_steps")
+}
+
+model WorkflowStepDependency {
+  id String @id @default(uuid())
+
+  dependentStepId  String
+  dependentStep    WorkflowStep @relation("dependent", fields: [dependentStepId], references: [id], onDelete: Cascade)
+
+  dependencyStepId String
+  dependencyStep   WorkflowStep @relation("dependency", fields: [dependencyStepId], references: [id], onDelete: Cascade)
+
+  @@unique([dependentStepId, dependencyStepId])
+  @@map("workflow_step_dependencies")
+}
+
+model WorkflowExecution {
+  id          String          @id @default(uuid())
+  status      ExecutionStatus @default(PENDING)
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  stepExecutions StepExecution[]
+
+  @@index([workflowId, status])
+  @@map("workflow_executions")
+}
+
+model StepExecution {
+  id           String          @id @default(uuid())
+  status       ExecutionStatus @default(PENDING)
+  result       String?
+  errorMessage String?
+  attempt      Int             @default(0)
+  maxRetries   Int             @default(3)
+  retryDelayMs Int             @default(5000)
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  executionId String
+  execution   WorkflowExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+
+  stepId String
+  step   WorkflowStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  logs StepLog[]
+
+  @@index([executionId, status])
+  @@map("step_executions")
+}
+
+model StepLog {
+  id        String    @id @default(uuid())
+  stream    LogStream @default(STDOUT)
+  content   String
+  timestamp DateTime  @default(now())
+
+  stepExecutionId String
+  stepExecution   StepExecution @relation(fields: [stepExecutionId], references: [id], onDelete: Cascade)
+
+  @@index([stepExecutionId, timestamp])
+  @@map("step_logs")
 }

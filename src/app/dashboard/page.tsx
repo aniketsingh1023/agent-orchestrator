@@ -1,20 +1,17 @@
-import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { getOrCreateUser } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function DashboardPage() {
-  const { userId } = await auth();
-  if (!userId) redirect("/sign-in");
-
-  const user = await db.user.findUnique({ where: { id: userId } });
+  const user = await getOrCreateUser();
   if (!user) redirect("/sign-in");
 
   const [total, running, failed, completed] = await Promise.all([
-    db.task.count({ where: { userId } }),
-    db.task.count({ where: { userId, status: "RUNNING" } }),
-    db.task.count({ where: { userId, status: "FAILED" } }),
-    db.task.count({ where: { userId, status: "COMPLETED" } }),
+    db.task.count({ where: { userId: user.id } }),
+    db.task.count({ where: { userId: user.id, status: "RUNNING" } }),
+    db.task.count({ where: { userId: user.id, status: "FAILED" } }),
+    db.task.count({ where: { userId: user.id, status: "COMPLETED" } }),
   ]);
 
   const stats = [
