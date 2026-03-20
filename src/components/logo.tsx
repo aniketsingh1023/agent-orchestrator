@@ -1,26 +1,48 @@
 "use client";
 
+import Image from "next/image";
+
 /**
- * CtrlAI Logo component — renders the icon mark from the logo.jpeg
- * by showing only the top-left icon portion of the full brand sheet.
+ * CtrlAI Logo — icon mark only (for navbar, sidebar, small placements)
  */
 export function Logo({ size = 32 }: { size?: number }) {
   return (
-    <div
-      className="overflow-hidden rounded-lg shrink-0"
-      style={{ width: size, height: size }}
-    >
-      <img
-        src="/logo.jpeg"
-        alt="CtrlAI"
-        style={{
-          width: size * 3.2,
-          height: "auto",
-          objectFit: "cover",
-          objectPosition: "0% 0%",
-          marginTop: `-${size * 0.05}px`,
-        }}
-      />
-    </div>
+    <Image
+      src="/logo-icon.png"
+      alt="CtrlAI"
+      width={size}
+      height={size}
+      className="rounded-lg shrink-0"
+    />
+  );
+}
+
+/**
+ * CtrlAI full wordmark on light background
+ */
+export function LogoFull({ height = 40 }: { height?: number }) {
+  return (
+    <Image
+      src="/logo-light.png"
+      alt="CtrlAI"
+      width={Math.round(height * 2.25)}
+      height={height}
+      className="shrink-0 object-contain"
+    />
+  );
+}
+
+/**
+ * CtrlAI full wordmark on dark background
+ */
+export function LogoDark({ height = 40 }: { height?: number }) {
+  return (
+    <Image
+      src="/logo-dark.png"
+      alt="CtrlAI"
+      width={Math.round(height * 2.25)}
+      height={height}
+      className="shrink-0 object-contain"
+    />
   );
 }
